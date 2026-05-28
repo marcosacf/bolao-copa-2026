@@ -157,7 +157,7 @@
     .nav {
       position: sticky; top: 0; z-index: 100;
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 0;
       padding: 0;
       margin: 0 auto;
@@ -1068,6 +1068,113 @@
       pointer-events: none;
     }
 
+    /* =====================  SETINHAS RANKING  ===================== */
+    .rank-trend {
+      font-size: 11px; font-weight: 800;
+      font-family: var(--font-mono);
+      letter-spacing: 0;
+      display: flex; align-items: center; gap: 2px;
+      margin-top: 4px;
+    }
+    .rank-trend.up { color: var(--green); }
+    .rank-trend.down { color: var(--red); }
+    .rank-trend.same { color: var(--muted); }
+
+    /* =====================  AVISO PRAZO  ===================== */
+    .prazo-aviso {
+      position: fixed; bottom: 24px; left: 24px; z-index: 999;
+      background: rgba(255,51,85,0.15);
+      border: 1px solid rgba(255,51,85,0.5);
+      border-left: 3px solid var(--red);
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      display: none;
+      align-items: center; gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 11px; font-weight: 700;
+      color: var(--red);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      backdrop-filter: blur(12px);
+      max-width: 320px;
+    }
+    .prazo-aviso.show { display: flex; }
+    .prazo-aviso::before {
+      content: '🔒'; font-size: 16px;
+    }
+
+    /* =====================  CAMPO PRAZO ADMIN  ===================== */
+    .prazo-admin {
+      display: flex; align-items: center; gap: 12px;
+      padding: 18px 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .prazo-admin label { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+    .prazo-input {
+      background: var(--navy3);
+      border: 1px solid var(--border-strong);
+      color: var(--gold);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      outline: none;
+      transition: all 0.18s;
+    }
+    .prazo-input:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(0,212,255,0.14); }
+
+    /* =====================  MINI RANKING  ===================== */
+    .mini-ranking {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      border-left: 3px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      align-items: center; gap: 20px;
+      flex-wrap: wrap;
+    }
+    .mini-ranking.show { display: flex; }
+    .mini-rank-pos {
+      font-family: var(--font-display);
+      font-size: 40px; font-weight: 900;
+      color: var(--gold);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .mini-rank-info { flex: 1; }
+    .mini-rank-nome { font-size: 14px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.05em; }
+    .mini-rank-pts { font-family: var(--font-mono); font-size: 22px; font-weight: 800; color: var(--gold); margin-top: 2px; }
+    .mini-rank-diff {
+      font-family: var(--font-mono);
+      font-size: 11px; font-weight: 700;
+      color: var(--muted2);
+      letter-spacing: 0.06em;
+      text-align: right;
+    }
+    .mini-rank-diff span { color: var(--red); display: block; font-size: 16px; font-weight: 800; }
+
+    /* =====================  ABA DESEMPENHO  ===================== */
+    #section-desempenho .selection-row { margin-bottom: 20px; }
+    .desempenho-chart-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      position: relative;
+    }
+    .desempenho-chart-wrap canvas { width: 100% !important; }
+    .desempenho-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+    }
+
   </style>
 </head>
 <body>
@@ -1078,11 +1185,22 @@
   <button class="nav-btn"        role="tab" aria-selected="false" aria-controls="section-palpites"   onclick="showSection('palpites')">🎯 Meus Palpites</button>
   <button class="nav-btn"        role="tab" aria-selected="false" aria-controls="section-resultados" onclick="showSection('resultados')">⚽ Resultados Oficiais</button>
   <button class="nav-btn"        role="tab" aria-selected="false" aria-controls="section-regras"     onclick="showSection('regras')">⚙️ Regras do Jogo</button>
+  <button class="nav-btn"        role="tab" aria-selected="false" aria-controls="section-desempenho" onclick="showSection('desempenho')">📈 Desempenho</button>
 </nav>
 <main class="main">
   <datalist id="lista-selecoes"></datalist>
   <section class="section active" id="section-ranking"><div class="section-title">🏆 <span>Ranking</span> Geral</div><div id="ranking-container"><div class="spinner"></div></div></section>
   <section class="section" id="section-oficiais"><div class="section-title">📊 <span>Situação</span> dos Grupos</div><div class="simula-grid" id="grupos-oficiais-container"></div></section>
+
+  <!-- Mini ranking — visível só na aba palpites -->
+  <div class="mini-ranking" id="mini-ranking">
+    <div class="mini-rank-pos" id="mini-rank-pos">—</div>
+    <div class="mini-rank-info">
+      <div class="mini-rank-nome" id="mini-rank-nome">—</div>
+      <div class="mini-rank-pts" id="mini-rank-pts">— pts</div>
+    </div>
+    <div class="mini-rank-diff" id="mini-rank-diff"></div>
+  </div>
 
   <section class="section" id="section-palpites">
     <div class="section-title">🎯 <span>Meus</span> Palpites</div>
@@ -1130,12 +1248,26 @@
     </div>
   </section>
 
+  <section class="section" id="section-desempenho">
+    <div class="section-title">📈 <span>Meu</span> Desempenho</div>
+    <div class="selection-row">
+      <select id="select-desemp" class="select-styled" onchange="renderDesempenho()"><option value="">— Selecione um participante —</option></select>
+    </div>
+    <div class="desempenho-chart-wrap">
+      <canvas id="desempenho-canvas" height="320"></canvas>
+      <div class="desempenho-empty" id="desempenho-empty">Selecione um participante para ver o gráfico</div>
+    </div>
+  </section>
+
   <section class="section" id="section-regras">
     <div class="section-title">⚙️ <span>Motor</span> de Pontuação</div>
     <div id="regras-lista-container" class="card"></div>
     <button class="btn-gold-save-big" onclick="salvarAdminRegras()">💾 SALVAR REGRAS</button>
   </section>
 </main>
+
+<!-- Aviso prazo encerrado -->
+<div class="prazo-aviso" id="prazo-aviso">Prazo de palpites encerrado</div>
 
 <div class="modal-overlay" id="modal-add"><div class="modal"><h2 style="color:var(--gold);font-family:'Bebas Neue';font-size:30px;">Novo Participante</h2><input type="text" id="new-part-nome" class="final-input" style="margin-top:15px;" placeholder="Nome"><div style="display:flex;gap:10px;margin-top:25px;"><button class="btn-outline" style="flex:1;" onclick="closeModal('add')">Cancelar</button><button class="btn-green" style="flex:1;" onclick="confirmarAdd()">Adicionar</button></div></div></div>
 <div class="modal-overlay" id="modal-delete"><div class="modal" style="border-top:4px solid var(--red);"><h2 style="color:var(--red);font-family:'Bebas Neue';font-size:30px;">Excluir?</h2><p>Apagar permanentemente <strong id="delete-nome"></strong>?</p><div style="display:flex;gap:10px;margin-top:25px;"><button class="btn-outline" style="flex:1;" onclick="closeModal('delete')">Manter</button><button class="btn-green" style="flex:1;background:var(--red);" onclick="excluirDeVez()">Excluir</button></div></div></div>
@@ -1252,6 +1384,12 @@ function loadData() {
       STATE = d;
       renderRanking(); renderGruposOficiais(); renderSelect(); popularDatalist();
       renderAdminResultados(); renderBracket('bt-ofi', 'ofi'); renderRegras();
+      // Popular select de desempenho
+      var sd = document.getElementById('select-desemp');
+      var cur = sd.value;
+      sd.innerHTML = '<option value="">— Selecione um participante —</option>' + (d.participantes||[]).map(function(p){ return `<option value="${p}" ${p===cur?'selected':''}>${p}</option>`; }).join('');
+      if (cur) renderDesempenho();
+      verificarPrazo();
       if (document.getElementById('select-participante').value) loadPalpites();
     })
     .withFailureHandler(onErroRPC)
@@ -1485,7 +1623,21 @@ function propagarSlots(sel, slots, inputClass, isPal) {
 function renderRanking() {
   let cont = document.getElementById('ranking-container');
   if (!STATE.ranking||!STATE.ranking.length) { cont.innerHTML="<p style='text-align:center;color:var(--muted)'>Nenhum jogador.</p>"; return; }
-  cont.innerHTML = STATE.ranking.map((p,i)=>`<div class="rank-item ${i<3?'gold':''}" role="button" tabindex="0" aria-label="Ver extrato de ${p.nome.replace(/'/g,"\\'")}'" onclick="verExtrato('${p.nome.replace(/'/g,"\\'")}')"><div class="rank-pos ${i==0?'p1':''}">${i==0?'🥇':(i+1)+'º'}</div><div><div class="rank-name">${p.nome}</div></div><div class="rank-pts">${p.pts}</div></div>`).join('');
+  cont.innerHTML = STATE.ranking.map((p,i) => {
+    const posAnterior = STATE.rankingAnterior ? STATE.rankingAnterior[p.nome] : null;
+    let trendHtml = '';
+    if (posAnterior !== null && posAnterior !== undefined) {
+      const posAtual = i + 1;
+      if (posAnterior > posAtual) trendHtml = `<div class="rank-trend up">▲ +${posAnterior - posAtual}</div>`;
+      else if (posAnterior < posAtual) trendHtml = `<div class="rank-trend down">▼ ${posAnterior - posAtual}</div>`;
+      else trendHtml = `<div class="rank-trend same">— mesmo</div>`;
+    }
+    return `<div class="rank-item ${i<3?'gold':''}" role="button" tabindex="0" onclick="verExtrato('${p.nome.replace(/'/g,"\\'")}')">
+      <div class="rank-pos ${i==0?'p1':''}">${i==0?'🥇':(i+1)+'º'}</div>
+      <div><div class="rank-name">${p.nome}</div>${trendHtml}</div>
+      <div class="rank-pts">${p.pts}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderGruposOficiais() {
@@ -1524,6 +1676,8 @@ function loadPalpites() {
   });
   document.getElementById('extras-container').innerHTML=hExt;
   _palpitesModificados = false;
+  atualizarMiniRanking(n);
+  verificarPrazo();
   gerarSimula();
 }
 
@@ -1588,10 +1742,191 @@ function salvarAdminResultados() {
 
 function renderRegras() {
   let h='';
+  // Campo prazo
+  const prazoVal = STATE.prazo || '';
+  h += `<div class="prazo-admin"><label>⏰ Prazo de encerramento dos palpites</label><input type="datetime-local" class="prazo-input" id="prazo-field" value="${prazoVal}"><button class="btn-green" style="padding:8px 14px;font-size:11px;" onclick="salvarPrazo()">Salvar</button></div>`;
   Object.keys(STATE.regras).forEach(k=>{if(REGRAS_BASE.includes(k)){const lbl=k==='placarExato'?'🎯 Placar Exato':(k==='acertouVencedor'?'✅ Vencedor/Empate':(k==='classifExata'?'📍 Posição Exata':'🔄 Passou de Fase'));h+=`<div class="admin-row"><div class="admin-label">${lbl}</div><input type="number" class="admin-input-val a-reg" data-k="${k}" value="${STATE.regras[k]}" min="0" aria-label="Pontos: ${lbl}"></div>`;}});
   h+='<h4 style="color:var(--gold);margin-top:30px;margin-bottom:10px">Especiais</h4>';
   Object.keys(STATE.regras).forEach(k=>{if(!REGRAS_BASE.includes(k)) h+=`<div class="admin-row"><div class="admin-label">${getEmoji(k)} ${k}</div><input type="number" class="admin-input-val a-reg" data-k="${k}" value="${STATE.regras[k]}" min="0" aria-label="Pontos: ${k}"></div>`;});
   document.getElementById('regras-lista-container').innerHTML=h;
+}
+
+function salvarPrazo() {
+  const prazo = document.getElementById('prazo-field').value;
+  google.script.run
+    .withSuccessHandler(function() { showToast('Prazo salvo!', 'success'); loadData(); })
+    .withFailureHandler(onErroRPC)
+    .savePrazo({action:'savePrazo', prazo: prazo});
+}
+
+function verificarPrazo() {
+  const aviso = document.getElementById('prazo-aviso');
+  if (!STATE.prazo) { aviso.classList.remove('show'); return false; }
+  const agora = new Date(), limite = new Date(STATE.prazo);
+  const encerrado = agora > limite;
+  if (encerrado) {
+    aviso.classList.add('show');
+    // Bloqueia todos os inputs de palpites
+    document.querySelectorAll('.p-in, .mm-in, .ex-in, .bm-inp').forEach(function(inp) {
+      inp.disabled = true;
+      inp.style.opacity = '0.4';
+      inp.style.cursor = 'not-allowed';
+    });
+    const btn = document.querySelector('#palpites-master .btn-gold-save-big');
+    if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); }
+  } else {
+    aviso.classList.remove('show');
+  }
+  return encerrado;
+}
+
+function atualizarMiniRanking(nome) {
+  const mr = document.getElementById('mini-ranking');
+  if (!nome || !STATE.ranking || !STATE.ranking.length) { mr.classList.remove('show'); return; }
+  const idx = STATE.ranking.findIndex(r => r.nome === nome);
+  if (idx < 0) { mr.classList.remove('show'); return; }
+  const meu = STATE.ranking[idx];
+  const proximo = STATE.ranking[idx - 1];
+  document.getElementById('mini-rank-pos').textContent = (idx + 1) + 'º';
+  document.getElementById('mini-rank-nome').textContent = meu.nome;
+  document.getElementById('mini-rank-pts').textContent = meu.pts + ' pts';
+  let diffHtml = '';
+  if (proximo) {
+    const diff = proximo.pts - meu.pts;
+    diffHtml = `<span>-${diff} pts</span>para ${proximo.nome}`;
+  } else {
+    diffHtml = '<span style="color:var(--gold)">👑</span>Líder!';
+  }
+  document.getElementById('mini-rank-diff').innerHTML = diffHtml;
+  mr.classList.add('show');
+}
+
+function renderDesempenho() {
+  const nome = document.getElementById('select-desemp').value;
+  const canvas = document.getElementById('desempenho-canvas');
+  const empty = document.getElementById('desempenho-empty');
+  if (!nome || !STATE.ranking) { canvas.style.display='none'; empty.style.display='block'; return; }
+
+  // Coleta pontos por jogo baseado no extrato do participante
+  const p = STATE.ranking.find(r => r.nome === nome);
+  if (!p || !p.detalhes || !p.detalhes.extrato || !p.detalhes.extrato.length) {
+    canvas.style.display='none'; empty.style.display='block';
+    empty.textContent = 'Nenhum ponto ainda para ' + nome;
+    return;
+  }
+
+  canvas.style.display='block'; empty.style.display='none';
+
+  // Agrupa pontos por grupo/rodada
+  const grupos = {};
+  p.detalhes.extrato.forEach(function(e) {
+    const k = e.grupo === 'ZZZ' ? 'Extras' : (e.grupo.length === 1 ? 'Grupo ' + e.grupo : e.grupo);
+    if (!grupos[k]) grupos[k] = 0;
+    grupos[k] += e.pts;
+  });
+
+  const labels = Object.keys(grupos);
+  const valores = Object.values(grupos);
+  // Acumulado
+  const acumulado = [];
+  let soma = 0;
+  valores.forEach(function(v) { soma += v; acumulado.push(soma); });
+
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.offsetWidth - 48;
+  canvas.height = 300;
+  const W = canvas.width, H = canvas.height;
+  const PAD = { top: 30, right: 20, bottom: 50, left: 50 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+  const maxVal = Math.max(...acumulado, 10);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Fundo
+  ctx.fillStyle = '#0C1120';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(0,212,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD.top + cH - (cH * i / 4);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + cW, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(97,117,145,0.8)';
+    ctx.font = '10px JetBrains Mono, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(maxVal * i / 4), PAD.left - 8, y + 4);
+  }
+
+  if (acumulado.length < 2) {
+    ctx.fillStyle = '#617591';
+    ctx.font = '12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Pontos insuficientes para o gráfico', W/2, H/2);
+    return;
+  }
+
+  // Área sob a curva
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+  grad.addColorStop(0, 'rgba(0,212,255,0.35)');
+  grad.addColorStop(1, 'rgba(0,212,255,0.02)');
+  ctx.beginPath();
+  acumulado.forEach(function(v, i) {
+    const x = PAD.left + (cW / (acumulado.length - 1)) * i;
+    const y = PAD.top + cH - (v / maxVal * cH);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(PAD.left + cW, PAD.top + cH);
+  ctx.lineTo(PAD.left, PAD.top + cH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Linha
+  ctx.beginPath();
+  ctx.strokeStyle = '#00D4FF';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  acumulado.forEach(function(v, i) {
+    const x = PAD.left + (cW / (acumulado.length - 1)) * i;
+    const y = PAD.top + cH - (v / maxVal * cH);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Pontos e labels
+  acumulado.forEach(function(v, i) {
+    const x = PAD.left + (cW / (acumulado.length - 1)) * i;
+    const y = PAD.top + cH - (v / maxVal * cH);
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#00D4FF';
+    ctx.fill();
+    ctx.strokeStyle = '#060912';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Valor acima do ponto
+    ctx.fillStyle = '#E8EDF5';
+    ctx.font = 'bold 10px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(v, x, y - 10);
+    // Label abaixo
+    ctx.fillStyle = '#617591';
+    ctx.font = '9px Inter, sans-serif';
+    ctx.save();
+    ctx.translate(x, PAD.top + cH + 14);
+    ctx.rotate(-0.4);
+    ctx.textAlign = 'right';
+    ctx.fillText(labels[i] || '', 0, 0);
+    ctx.restore();
+  });
+
+  // Total final
+  ctx.fillStyle = '#00D4FF';
+  ctx.font = 'bold 13px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('TOTAL: ' + soma + ' PTS', PAD.left + 4, PAD.top - 8);
 }
 
 function salvarAdminRegras() {
