@@ -1302,7 +1302,7 @@ function cardHTML(fase, match, palpVal, inputClass, onInput) {
       <input type="number" class="bm-inp ${inputClass}" data-s="2" value="${g2}" min="0" max="99" aria-label="Gols time 2" oninput="${onInput}">
     </div>
     <div class="bm-pen${pen>0?' show':''}">
-      <select onchange="${onInput}" aria-label="Desempate nos pênaltis">
+      <select onchange="${onInput}; if(this.value!='0'){ const p=this.closest('.bm-pen'); setTimeout(()=>{p.classList.remove('show');p.setAttribute('data-closed','1');},150); }" aria-label="Desempate nos pênaltis">
         <option value="0">Pênaltis: quem avança?</option>
         <option value="1" ${pen==1?'selected':''}>T1 Avança</option>
         <option value="2" ${pen==2?'selected':''}>T2 Avança</option>
@@ -1469,7 +1469,9 @@ function propagarSlots(sel, slots, inputClass, isPal) {
       const penDiv = c.querySelector('.bm-pen');
       if (v1 > v2) { venc = n1; penDiv.classList.remove('show'); t1.classList.add('winner'); t2.classList.remove('winner'); }
       else if (v2 > v1) { venc = n2; penDiv.classList.remove('show'); t2.classList.add('winner'); t1.classList.remove('winner'); }
-      else { penDiv.classList.add('show'); venc = pen.value === '1' ? n1 : (pen.value === '2' ? n2 : null); t1.classList.remove('winner'); t2.classList.remove('winner'); }
+      if (v1 > v2) { venc = n1; penDiv.classList.remove('show'); penDiv.removeAttribute('data-closed'); t1.classList.add('winner'); t2.classList.remove('winner'); }
+      else if (v2 > v1) { venc = n2; penDiv.classList.remove('show'); penDiv.removeAttribute('data-closed'); t2.classList.add('winner'); t1.classList.remove('winner'); }
+      else { if (!penDiv.getAttribute('data-closed')) penDiv.classList.add('show'); venc = pen.value === '1' ? n1 : (pen.value === '2' ? n2 : null); t1.classList.remove('winner'); t2.classList.remove('winner'); }
     } else {
       t1.classList.remove('winner'); t2.classList.remove('winner');
       c.querySelector('.bm-pen')?.classList.remove('show');
@@ -1654,4 +1656,3 @@ function calcStats(g,ofi,l){let s={};g.paises.forEach(p=>s[p]={pts:0,sg:0,gp:0,j
 </script>
 </body>
 </html>
-
