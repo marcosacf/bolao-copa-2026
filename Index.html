@@ -1443,7 +1443,7 @@ function cardHTML(fase, match, palpVal, inputClass, onInput) {
       <input type="number" class="bm-inp ${inputClass}" data-s="2" value="${g2}" oninput="${onInput}">
     </div>
     <div class="bm-pen${pen>0?' show':''}">
-      <select onchange="${onInput}">
+      <select onchange="${onInput}; if(this.value!='0'){ const p=this.closest('.bm-pen'); setTimeout(()=>{p.classList.remove('show');p.setAttribute('data-closed','1');},150); }">
         <option value="0">Pênaltis: quem avança?</option>
         <option value="1" ${pen==1?'selected':''}>T1 Avança</option>
         <option value="2" ${pen==2?'selected':''}>T2 Avança</option>
@@ -1628,9 +1628,9 @@ function propagarSlots(sel, slots, inputClass, isPal) {
     if (i1 && i2 && i1.value !== '' && i2.value !== '') {
       const v1 = parseInt(i1.value), v2 = parseInt(i2.value);
       const penDiv = c.querySelector('.bm-pen');
-      if (v1 > v2) { venc = n1; penDiv.classList.remove('show'); t1.classList.add('winner'); t2.classList.remove('winner'); }
-      else if (v2 > v1) { venc = n2; penDiv.classList.remove('show'); t2.classList.add('winner'); t1.classList.remove('winner'); }
-      else { penDiv.classList.add('show'); venc = pen.value === '1' ? n1 : (pen.value === '2' ? n2 : null); t1.classList.remove('winner'); t2.classList.remove('winner'); }
+      if (v1 > v2) { venc = n1; penDiv.classList.remove('show'); penDiv.removeAttribute('data-closed'); t1.classList.add('winner'); t2.classList.remove('winner'); }
+      else if (v2 > v1) { venc = n2; penDiv.classList.remove('show'); penDiv.removeAttribute('data-closed'); t2.classList.add('winner'); t1.classList.remove('winner'); }
+      else { if (!penDiv.getAttribute('data-closed')) penDiv.classList.add('show'); venc = pen.value === '1' ? n1 : (pen.value === '2' ? n2 : null); t1.classList.remove('winner'); t2.classList.remove('winner'); }
     } else {
       t1.classList.remove('winner'); t2.classList.remove('winner');
       c.querySelector('.bm-pen')?.classList.remove('show');
@@ -1742,6 +1742,8 @@ function openModal(id) { document.getElementById('modal-'+id).classList.add('ope
 function closeModal(id) { document.getElementById('modal-'+id).classList.remove('open'); }
 function showToast(m,t) { const b=document.getElementById('toast'); b.innerText=m; b.className='toast show '+(t||''); setTimeout(()=>b.classList.remove('show'),3000); }
 function initDrag(id) { const s=document.getElementById(id); if(!s) return; let d=false,x,l; s.onmousedown=e=>{d=true;x=e.pageX-s.offsetLeft;l=s.scrollLeft;}; s.onmouseleave=()=>d=false; s.onmouseup=()=>d=false; s.onmousemove=e=>{if(!d)return;e.preventDefault();s.scrollLeft=l-(e.pageX-s.offsetLeft-x)*1.5;}; }
+/* Impede scroll do mouse alterar inputs numéricos */
+document.addEventListener('wheel', function(e) { if (e.target.type === 'number') e.preventDefault(); }, { passive: false });
 function calcStats(g,ofi,l){let s={};g.paises.forEach(p=>s[p]={pts:0,sg:0,gp:0,j:0,v:0,e:0,d:0});g.jogos.forEach((j,i)=>{let o=ofi[l+'-'+i];if(!o)return;s[j[0]].j++;s[j[1]].j++;s[j[0]].gp+=o.gols1;s[j[0]].sg+=(o.gols1-o.gols2);s[j[1]].gp+=o.gols2;s[j[1]].sg+=(o.gols2-o.gols1);if(o.gols1>o.gols2){s[j[0]].pts+=3;s[j[0]].v++;s[j[1]].d++;}else if(o.gols1<o.gols2){s[j[1]].pts+=3;s[j[1]].v++;s[j[0]].d++;}else{s[j[0]].pts++;s[j[1]].pts++;s[j[0]].e++;s[j[1]].e++;}});return s;}
 </script>
 </body>
