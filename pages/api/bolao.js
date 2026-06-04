@@ -1,10 +1,7 @@
-// api/bolao.js — API Route do Next.js (substitui o doPost do Apps Script)
-
 import { readRows, appendRow, deleteRows, updateCell } from '../../lib/sheets';
 import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, calcularPontos } from '../../lib/data';
 
 export default async function handler(req, res) {
-  // CORS — permite o frontend chamar a API
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -15,22 +12,13 @@ export default async function handler(req, res) {
       const data = await getData();
       return res.status(200).json(data);
     }
-
     if (req.method === 'POST') {
       const { action, ...body } = req.body;
-      const actions = {
-        addParticipant,
-        removeParticipant,
-        savePalpites,
-        saveResultados,
-        saveRegras,
-        savePrazo,
-      };
+      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, savePrazo };
       if (!actions[action]) return res.status(400).json({ ok: false, error: 'Ação inválida: ' + action });
       const result = await actions[action](body);
       return res.status(200).json(result);
     }
-
     return res.status(405).json({ ok: false, error: 'Método não permitido' });
   } catch (err) {
     console.error('[API Error]', err);
@@ -38,9 +26,11 @@ export default async function handler(req, res) {
   }
 }
 
-// =============================================
-// GET — lê todos os dados
-// =============================================
+// ── Helpers ──────────────────────────────────────────────
+function normName(s) { return (s || '').trim(); }
+function isValidScore(v) { return Number.isInteger(v) && v >= 0 && v <= 99; }
+
+// ── GET ──────────────────────────────────────────────────
 async function getData() {
   const rows = await readRows();
   const part = [], pal = {}, extP = {}, ofi = {}, rankingAnterior = {};
@@ -50,168 +40,200 @@ async function getData() {
   for (let i = 1; i < rows.length; i++) {
     const [t, g, ji, g1, g2, n, ex, pEx] = rows[i];
     if (!t) continue;
-    if (t === 'participante') { if (!part.includes(n)) part.push(n); }
-    else if (t === 'palpite') {
-      if (!pal[n]) pal[n] = [];
-      pal[n].push({ grupo:g, jogoIdx:parseInt(ji), gols1:parseInt(g1), gols2:parseInt(g2), penaltis:parseInt(ex)||0 });
+    const nm = normName(n);
+    if (t === 'participante') {
+      if (nm && !part.includes(nm)) part.push(nm);
+    } else if (t === 'palpite') {
+      if (!nm) continue;
+      if (!pal[nm]) pal[nm] = [];
+      pal[nm].push({ grupo: g, jogoIdx: parseInt(ji), gols1: parseInt(g1), gols2: parseInt(g2), penaltis: parseInt(ex) || 0 });
+    } else if (t === 'palpite_extra') {
+      if (!nm) continue;
+      if (!extP[nm]) extP[nm] = {};
+      extP[nm][g] = { palpite: ex, pontuou: (pEx == 1 || pEx === '1') };
+    } else if (t === 'oficial') {
+      ofi[g + '-' + ji] = { gols1: parseInt(g1), gols2: parseInt(g2), penaltis: parseInt(ex) || 0 };
+    } else if (t === 'regra') {
+      reg[g] = parseInt(ji);
+    } else if (t === 'prazo') {
+      prazo = g;
+    } else if (t === 'ranking_anterior') {
+      // col 1 = nome do participante, col 2 = posição
+      const rNm = normName(g);
+      if (rNm) rankingAnterior[rNm] = parseInt(ji);
     }
-    else if (t === 'palpite_extra') {
-      if (!extP[n]) extP[n] = {};
-      extP[n][g] = { palpite:ex, pontuou:(pEx==1||pEx==='1') };
-    }
-    else if (t === 'oficial') {
-      ofi[g+'-'+ji] = { gols1:parseInt(g1), gols2:parseInt(g2), penaltis:parseInt(ex)||0 };
-    }
-    else if (t === 'regra') { reg[g] = parseInt(ji); }
-    else if (t === 'prazo') { prazo = g; }
-    else if (t === 'ranking_anterior') { rankingAnterior[g] = parseInt(ji); }
+  }
+
+  // Bug fix: só retorna palpites de participantes cadastrados
+  const palFiltrado = {}, extPFiltrado = {};
+  for (const nm of part) {
+    if (pal[nm]) palFiltrado[nm] = pal[nm];
+    if (extP[nm]) extPFiltrado[nm] = extP[nm];
   }
 
   const ranking = part.map(nm => {
-    const c = calcularPontos(nm, pal[nm]||[], extP[nm]||{}, ofi, reg);
-    return { nome:nm, pts:c.total, detalhes:c };
+    const c = calcularPontos(nm, palFiltrado[nm] || [], extPFiltrado[nm] || {}, ofi, reg);
+    return { nome: nm, pts: c.total, detalhes: c };
   });
-  ranking.sort((a,b) => b.pts - a.pts);
+  ranking.sort((a, b) => b.pts - a.pts);
 
-  return { ok:true, participantes:part, palpites:pal, extrasPalpite:extP, oficiais:ofi, regras:reg, ranking, grupos:GRUPOS, bandeiras:BANDEIRAS, prazo, rankingAnterior };
+  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior };
 }
 
-// =============================================
-// PARTICIPANTES
-// =============================================
+// ── PARTICIPANTES ─────────────────────────────────────────
 async function addParticipant({ nome }) {
-  const n = (nome||'').trim();
-  if (!n) return { ok:false, error:'Nome inválido' };
-  if (n.length > 50) return { ok:false, error:'Nome muito longo' };
+  const n = normName(nome);
+  if (!n) return { ok: false, error: 'Nome inválido' };
+  if (n.length > 50) return { ok: false, error: 'Nome muito longo' };
   const rows = await readRows();
-  for (let i=1; i<rows.length; i++) {
-    if (rows[i][0]==='participante' && rows[i][5]===n) return { ok:false, error:'Já existe' };
+  for (let i = 1; i < rows.length; i++) {
+    // Bug fix: comparação case-insensitive para evitar duplicatas
+    if (rows[i][0] === 'participante' && normName(rows[i][5]).toLowerCase() === n.toLowerCase()) {
+      return { ok: false, error: 'Já existe um participante com esse nome' };
+    }
   }
-  await appendRow(['participante','','','','',n,'','']);
-  return { ok:true };
+  await appendRow(['participante', '', '', '', '', n, '', '']);
+  return { ok: true };
 }
 
 async function removeParticipant({ nome }) {
-  const n = (nome||'').trim();
-  if (!n) return { ok:false, error:'Nome inválido' };
+  const n = normName(nome);
+  if (!n) return { ok: false, error: 'Nome inválido' };
   const rows = await readRows();
   const toDelete = [];
-  for (let i=1; i<rows.length; i++) {
-    const tipo = rows[i][0], nomeLinha = (rows[i][5]||'').trim();
-    if (nomeLinha===n && ['participante','palpite','palpite_extra'].includes(tipo)) {
-      toDelete.push(i); // índice 0-based na planilha
-    }
+  for (let i = 1; i < rows.length; i++) {
+    const tipo = rows[i][0];
+    // Bug fix: também remove ranking_anterior (col 1 = nome) e limpa dados órfãos
+    const nomePrincipal = normName(rows[i][5]); // col 5 = nome na maioria dos tipos
+    const nomeRanking = normName(rows[i][1]);   // col 1 = nome no ranking_anterior
+
+    const ehDado = ['participante', 'palpite', 'palpite_extra'].includes(tipo) && nomePrincipal === n;
+    const ehRanking = tipo === 'ranking_anterior' && nomeRanking === n;
+
+    if (ehDado || ehRanking) toDelete.push(i);
   }
   if (toDelete.length) await deleteRows(toDelete);
-  return { ok:true };
+  return { ok: true };
 }
 
-// =============================================
-// PALPITES
-// =============================================
+// ── PALPITES ──────────────────────────────────────────────
 async function savePalpites({ nome, palpites, extras }) {
-  const n = (nome||'').trim();
-  if (!n) return { ok:false, error:'Nome inválido' };
+  const n = normName(nome);
+  if (!n) return { ok: false, error: 'Nome inválido' };
+
+  // Valida scores
+  for (const p of (palpites || [])) {
+    if (!isValidScore(p.gols1) || !isValidScore(p.gols2)) {
+      return { ok: false, error: 'Placar inválido' };
+    }
+  }
 
   const rows = await readRows();
   const toDelete = [];
   const ptsAntigos = {};
 
-  for (let i=1; i<rows.length; i++) {
-    if (rows[i][5]===n && (rows[i][0]==='palpite'||rows[i][0]==='palpite_extra')) {
-      if (rows[i][0]==='palpite_extra') ptsAntigos[rows[i][1]] = rows[i][7]||0;
+  for (let i = 1; i < rows.length; i++) {
+    // Bug fix: trim na comparação
+    const nmLinha = normName(rows[i][5]);
+    if (nmLinha === n && (rows[i][0] === 'palpite' || rows[i][0] === 'palpite_extra')) {
+      if (rows[i][0] === 'palpite_extra') ptsAntigos[rows[i][1]] = rows[i][7] || 0;
       toDelete.push(i);
     }
   }
   if (toDelete.length) await deleteRows(toDelete);
 
-  for (const p of palpites) {
-    await appendRow(['palpite', p.grupo, p.jogoIdx, p.gols1, p.gols2, n, p.penaltis||0, '']);
+  for (const p of (palpites || [])) {
+    await appendRow(['palpite', p.grupo, p.jogoIdx, p.gols1, p.gols2, n, p.penaltis || 0, '']);
   }
-  for (const k of Object.keys(extras||{})) {
-    if (extras[k]) await appendRow(['palpite_extra', k, '', '', '', n, extras[k], ptsAntigos[k]||0]);
+  for (const k of Object.keys(extras || {})) {
+    const val = (extras[k] || '').trim();
+    if (val) await appendRow(['palpite_extra', k, '', '', '', n, val, ptsAntigos[k] || 0]);
   }
-  return { ok:true };
+  return { ok: true };
 }
 
-// =============================================
-// RESULTADOS OFICIAIS
-// =============================================
+// ── RESULTADOS OFICIAIS ───────────────────────────────────
 async function saveResultados({ resultados, extrasChecks }) {
   const rows = await readRows();
 
-  // Salva ranking anterior
+  // Calcula ranking atual para salvar como "anterior"
   const part = [], pal = {}, extP = {}, ofi = {};
   let reg = { ...REGRAS_PADRAO };
-  for (let i=1; i<rows.length; i++) {
-    const [t,g,ji,g1,g2,n,ex,pEx] = rows[i];
+  for (let i = 1; i < rows.length; i++) {
+    const [t, g, ji, g1, g2, n, ex, pEx] = rows[i];
     if (!t) continue;
-    if (t==='participante' && !part.includes(n)) part.push(n);
-    else if (t==='palpite') { if (!pal[n]) pal[n]=[]; pal[n].push({grupo:g,jogoIdx:parseInt(ji),gols1:parseInt(g1),gols2:parseInt(g2),penaltis:parseInt(ex)||0}); }
-    else if (t==='palpite_extra') { if (!extP[n]) extP[n]={}; extP[n][g]={palpite:ex,pontuou:pEx==1}; }
-    else if (t==='oficial') { ofi[g+'-'+ji]={gols1:parseInt(g1),gols2:parseInt(g2),penaltis:parseInt(ex)||0}; }
-    else if (t==='regra') { reg[g]=parseInt(ji); }
+    const nm = normName(n);
+    if (t === 'participante' && nm && !part.includes(nm)) part.push(nm);
+    else if (t === 'palpite' && nm) { if (!pal[nm]) pal[nm] = []; pal[nm].push({ grupo: g, jogoIdx: parseInt(ji), gols1: parseInt(g1), gols2: parseInt(g2), penaltis: parseInt(ex) || 0 }); }
+    else if (t === 'palpite_extra' && nm) { if (!extP[nm]) extP[nm] = {}; extP[nm][g] = { palpite: ex, pontuou: pEx == 1 }; }
+    else if (t === 'oficial') { ofi[g + '-' + ji] = { gols1: parseInt(g1), gols2: parseInt(g2), penaltis: parseInt(ex) || 0 }; }
+    else if (t === 'regra') { reg[g] = parseInt(ji); }
   }
-  const rankingAtual = part.map(nm => { const c=calcularPontos(nm,pal[nm]||[],extP[nm]||{},ofi,reg); return {nome:nm,pts:c.total}; });
-  rankingAtual.sort((a,b)=>b.pts-a.pts);
+  const rankingAtual = part.map(nm => { const c = calcularPontos(nm, pal[nm] || [], extP[nm] || {}, ofi, reg); return { nome: nm, pts: c.total }; });
+  rankingAtual.sort((a, b) => b.pts - a.pts);
 
-  // Remove ranking anterior e oficiais antigos
+  // Remove oficiais e ranking_anterior antigos
   const toDelete = [];
-  for (let i=1; i<rows.length; i++) {
-    if (rows[i][0]==='oficial' || rows[i][0]==='ranking_anterior') toDelete.push(i);
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === 'oficial' || rows[i][0] === 'ranking_anterior') toDelete.push(i);
   }
   if (toDelete.length) await deleteRows(toDelete);
 
   // Salva ranking anterior
-  for (let idx=0; idx<rankingAtual.length; idx++) {
-    await appendRow(['ranking_anterior', rankingAtual[idx].nome, idx+1, '', '', 'SISTEMA', '', '']);
+  for (let idx = 0; idx < rankingAtual.length; idx++) {
+    await appendRow(['ranking_anterior', rankingAtual[idx].nome, idx + 1, '', '', 'SISTEMA', '', '']);
   }
 
-  // Salva novos resultados
-  for (const r of resultados) {
-    if (r.gols1!=='' && r.gols2!=='') {
-      await appendRow(['oficial', r.grupo, r.jogoIdx, r.gols1, r.gols2, 'OFICIAL', r.penaltis||0, '']);
+  // Salva novos resultados (com validação)
+  for (const r of (resultados || [])) {
+    const g1 = parseInt(r.gols1), g2 = parseInt(r.gols2);
+    if (isValidScore(g1) && isValidScore(g2)) {
+      await appendRow(['oficial', r.grupo, r.jogoIdx, g1, g2, 'OFICIAL', r.penaltis || 0, '']);
     }
   }
 
-  // Atualiza flags extras
+  // Atualiza flags de extras (só para participantes cadastrados)
   const newRows = await readRows();
-  for (let j=1; j<newRows.length; j++) {
-    if (newRows[j][0]==='palpite_extra') {
-      const rNome=newRows[j][1], pNome=newRows[j][5];
-      const check = (extrasChecks?.[pNome]?.[rNome]) ? 1 : 0;
-      await updateCell(j+1, 8, check);
+  for (let j = 1; j < newRows.length; j++) {
+    if (newRows[j][0] === 'palpite_extra') {
+      const rNome = newRows[j][1], pNome = normName(newRows[j][5]);
+      // Bug fix: só atualiza se o participante ainda existe
+      if (part.includes(pNome)) {
+        const check = (extrasChecks?.[pNome]?.[rNome]) ? 1 : 0;
+        await updateCell(j + 1, 8, check);
+      }
     }
   }
-  return { ok:true };
+  return { ok: true };
 }
 
-// =============================================
-// REGRAS
-// =============================================
+// ── REGRAS ────────────────────────────────────────────────
 async function saveRegras({ regras }) {
+  if (!regras || typeof regras !== 'object') return { ok: false, error: 'Regras inválidas' };
   const rows = await readRows();
   const toDelete = [];
-  for (let i=1; i<rows.length; i++) {
-    if (rows[i][0]==='regra') toDelete.push(i);
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === 'regra') toDelete.push(i);
   }
   if (toDelete.length) await deleteRows(toDelete);
   for (const k of Object.keys(regras)) {
-    await appendRow(['regra', k, regras[k], '', '', 'SISTEMA', '', '']);
+    const val = parseInt(regras[k]);
+    if (!isNaN(val) && val >= 0) {
+      await appendRow(['regra', k, val, '', '', 'SISTEMA', '', '']);
+    }
   }
-  return { ok:true };
+  return { ok: true };
 }
 
-// =============================================
-// PRAZO
-// =============================================
+// ── PRAZO ─────────────────────────────────────────────────
 async function savePrazo({ prazo }) {
   const rows = await readRows();
   const toDelete = [];
-  for (let i=1; i<rows.length; i++) {
-    if (rows[i][0]==='prazo') toDelete.push(i);
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === 'prazo') toDelete.push(i);
   }
   if (toDelete.length) await deleteRows(toDelete);
-  if (prazo) await appendRow(['prazo', prazo, '', '', '', 'SISTEMA', '', '']);
-  return { ok:true };
+  const p = (prazo || '').trim();
+  if (p) await appendRow(['prazo', p, '', '', '', 'SISTEMA', '', '']);
+  return { ok: true };
 }
