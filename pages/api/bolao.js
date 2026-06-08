@@ -1,4 +1,4 @@
-import { readRows, appendRow, deleteRows, updateCell } from '../../lib/sheets';
+import { readRows, appendRow, appendRows, deleteRows, updateCells } from '../../lib/sheets';
 import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, calcularPontos } from '../../lib/data';
 
 export default async function handler(req, res) {
@@ -142,13 +142,15 @@ async function savePalpites({ nome, palpites, extras }) {
   }
   if (toDelete.length) await deleteRows(toDelete);
 
+  const newRows = [];
   for (const p of (palpites || [])) {
-    await appendRow(['palpite', p.grupo, p.jogoIdx, p.gols1, p.gols2, n, p.penaltis || 0, '']);
+    newRows.push(['palpite', p.grupo, p.jogoIdx, p.gols1, p.gols2, n, p.penaltis || 0, '']);
   }
   for (const k of Object.keys(extras || {})) {
     const val = (extras[k] || '').trim();
-    if (val) await appendRow(['palpite_extra', k, '', '', '', n, val, ptsAntigos[k] || 0]);
+    if (val) newRows.push(['palpite_extra', k, '', '', '', n, val, ptsAntigos[k] || 0]);
   }
+  await appendRows(newRows);
   return { ok: true };
 }
 
@@ -180,30 +182,31 @@ async function saveResultados({ resultados, extrasChecks }) {
   if (toDelete.length) await deleteRows(toDelete);
 
   // Salva ranking anterior
-  for (let idx = 0; idx < rankingAtual.length; idx++) {
-    await appendRow(['ranking_anterior', rankingAtual[idx].nome, idx + 1, '', '', 'SISTEMA', '', '']);
-  }
+  const novasLinhas = rankingAtual.map((ra, idx) => ['ranking_anterior', ra.nome, idx + 1, '', '', 'SISTEMA', '', '']);
 
   // Salva novos resultados (com validação)
   for (const r of (resultados || [])) {
     const g1 = parseInt(r.gols1), g2 = parseInt(r.gols2);
     if (isValidScore(g1) && isValidScore(g2)) {
-      await appendRow(['oficial', r.grupo, r.jogoIdx, g1, g2, 'OFICIAL', r.penaltis || 0, '']);
+      novasLinhas.push(['oficial', r.grupo, r.jogoIdx, g1, g2, 'OFICIAL', r.penaltis || 0, '']);
     }
   }
+  await appendRows(novasLinhas);
 
   // Atualiza flags de extras (só para participantes cadastrados)
   const newRows = await readRows();
+  const cellUpdates = [];
   for (let j = 1; j < newRows.length; j++) {
     if (newRows[j][0] === 'palpite_extra') {
       const rNome = newRows[j][1], pNome = normName(newRows[j][5]);
       // Bug fix: só atualiza se o participante ainda existe
       if (part.includes(pNome)) {
         const check = (extrasChecks?.[pNome]?.[rNome]) ? 1 : 0;
-        await updateCell(j + 1, 8, check);
+        cellUpdates.push({ row: j + 1, col: 8, value: check });
       }
     }
   }
+  await updateCells(cellUpdates);
   return { ok: true };
 }
 
@@ -216,12 +219,14 @@ async function saveRegras({ regras }) {
     if (rows[i][0] === 'regra') toDelete.push(i);
   }
   if (toDelete.length) await deleteRows(toDelete);
+  const novasLinhas = [];
   for (const k of Object.keys(regras)) {
     const val = parseInt(regras[k]);
     if (!isNaN(val) && val >= 0) {
-      await appendRow(['regra', k, val, '', '', 'SISTEMA', '', '']);
+      novasLinhas.push(['regra', k, val, '', '', 'SISTEMA', '', '']);
     }
   }
+  await appendRows(novasLinhas);
   return { ok: true };
 }
 
