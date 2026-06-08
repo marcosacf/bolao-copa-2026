@@ -431,8 +431,25 @@ var STATE = {};
 var REGRAS_BASE = ['placarExato','acertouVencedor','classifExata','classifPassou'];
 var _palpitesModificados = false;
 
+const THIRD_SLOTS = [
+  {p1:'1E', cand:['A','B','C','D','F']},
+  {p1:'1I', cand:['C','D','F','G','H']},
+  {p1:'1D', cand:['B','E','F','I','J']},
+  {p1:'1G', cand:['A','E','H','I','J']},
+  {p1:'1A', cand:['C','E','F','H','I']},
+  {p1:'1L', cand:['E','H','I','J','K']},
+  {p1:'1B', cand:['E','F','G','I','J']},
+  {p1:'1K', cand:['D','E','I','J','L']}
+];
 const MM = {
-  R32:[{id:1,p1:'1A',p2:'2B'},{id:2,p1:'1C',p2:'2D'},{id:3,p1:'1E',p2:'2F'},{id:4,p1:'1G',p2:'2H'},{id:5,p1:'1I',p2:'2J'},{id:6,p1:'1K',p2:'2L'},{id:7,p1:'T1',p2:'T5'},{id:8,p1:'T2',p2:'T6'},{id:9,p1:'2A',p2:'1B'},{id:10,p1:'2C',p2:'1D'},{id:11,p1:'2E',p2:'1F'},{id:12,p1:'2G',p2:'1H'},{id:13,p1:'2I',p2:'1J'},{id:14,p1:'2K',p2:'1L'},{id:15,p1:'T3',p2:'T7'},{id:16,p1:'T4',p2:'T8'}],
+  R32:[
+    {id:1,p1:'2A',p2:'2B'},{id:2,p1:'1F',p2:'2C'},{id:3,p1:'2K',p2:'2L'},{id:4,p1:'1H',p2:'2J'},
+    {id:5,p1:'1C',p2:'2F'},{id:6,p1:'2E',p2:'2I'},{id:7,p1:'1J',p2:'2H'},{id:8,p1:'2D',p2:'2G'},
+    {id:9,p1:THIRD_SLOTS[0].p1,p2:'Q0'},{id:10,p1:THIRD_SLOTS[1].p1,p2:'Q1'},
+    {id:11,p1:THIRD_SLOTS[2].p1,p2:'Q2'},{id:12,p1:THIRD_SLOTS[3].p1,p2:'Q3'},
+    {id:13,p1:THIRD_SLOTS[4].p1,p2:'Q4'},{id:14,p1:THIRD_SLOTS[5].p1,p2:'Q5'},
+    {id:15,p1:THIRD_SLOTS[6].p1,p2:'Q6'},{id:16,p1:THIRD_SLOTS[7].p1,p2:'Q7'}
+  ],
   R16:[{id:17,p1:'W1',p2:'W2'},{id:18,p1:'W3',p2:'W4'},{id:19,p1:'W5',p2:'W6'},{id:20,p1:'W7',p2:'W8'},{id:21,p1:'W9',p2:'W10'},{id:22,p1:'W11',p2:'W12'},{id:23,p1:'W13',p2:'W14'},{id:24,p1:'W15',p2:'W16'}],
   QF:[{id:25,p1:'W17',p2:'W18'},{id:26,p1:'W19',p2:'W20'},{id:27,p1:'W21',p2:'W22'},{id:28,p1:'W23',p2:'W24'}],
   SF:[{id:29,p1:'W25',p2:'W26'},{id:30,p1:'W27',p2:'W28'}],
@@ -559,6 +576,18 @@ function renderBracket(containerId,tipo){
   parseEmojis(container);
 }
 
+// Atribui os 8 melhores 3ºs colocados aos slots fixos do chaveamento, seguindo
+// a ordem oficial de prioridade da FIFA (cada slot só aceita 3ºs de um grupo de origens específico)
+function atribuirTerceiros(tercList){
+  var qualif=tercList.filter(function(x){return x.j>0;}).sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;}).slice(0,8);
+  var pool=qualif.slice(),slots={};
+  THIRD_SLOTS.forEach(function(slot,i){
+    var idx=pool.findIndex(function(t){return slot.cand.indexOf(t.grupo)!==-1;});
+    if(idx!==-1){slots['Q'+i]=pool[idx].nome;pool.splice(idx,1);}
+    else slots['Q'+i]='3º Classificado';
+  });
+  return slots;
+}
 function _gerarSimulaImpl(){
   var stats={},terc=[],hSim='';
   Object.keys(STATE.grupos).forEach(function(l){
@@ -571,14 +600,13 @@ function _gerarSimulaImpl(){
         if(v1>v2){gS[j[0]].pts+=3;gS[j[0]].v++;gS[j[1]].d++;}else if(v1<v2){gS[j[1]].pts+=3;gS[j[1]].v++;gS[j[0]].d++;}else{gS[j[0]].pts++;gS[j[1]].pts++;gS[j[0]].e++;gS[j[1]].e++;}
       }
     });
-    var sorted=Object.values(gS).sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;});stats[l]=sorted;terc.push(sorted[2]);
+    var sorted=Object.values(gS).sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;});stats[l]=sorted;terc.push(Object.assign({grupo:l},sorted[2]));
     hSim+='<div class="simula-card"><div class="simula-head">GRUPO '+l+'</div><table class="simula-table"><thead><tr><th style="text-align:left">Equipe</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead><tbody>'+sorted.map(function(x,i){return '<tr class="'+(i<2?'top'+(i+1):'')+'"><td class="team-cell">'+getFlag(x.nome)+' '+x.nome+'</td><td style="color:var(--gold);font-weight:bold">'+x.pts+'</td><td>'+x.j+'</td><td>'+x.v+'</td><td>'+x.e+'</td><td>'+x.d+'</td><td>'+x.sg+'</td></tr>';}).join('')+'</tbody></table></div>';
   });
   document.getElementById('simula-container').innerHTML=hSim;
-  terc.sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;});
   var slots={};
   Object.keys(stats).forEach(function(l){slots['1'+l]=stats[l][0].j>0?stats[l][0].nome:'1º '+l;slots['2'+l]=stats[l][1].j>0?stats[l][1].nome:'2º '+l;});
-  for(var i=0;i<8;i++)slots['T'+(i+1)]=terc[i]&&terc[i].j>0?terc[i].nome:'T'+(i+1);
+  Object.assign(slots,atribuirTerceiros(terc));
   propagarSlots('#bt-pal',slots,'mm-in',true);
   var n=document.getElementById('select-participante').value;if(n)salvarRascunho(n);
   parseEmojis(document.getElementById('simula-container'));
@@ -594,10 +622,9 @@ function getSlotsClasficacao(){
     var s=calcStats(STATE.grupos[l],STATE.oficiais,l);
     var sorted=Object.keys(s).map(function(k){return Object.assign({nome:k},s[k]);}).sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;});
     slots['1'+l]=sorted[0]?sorted[0].nome:'1º '+l;slots['2'+l]=sorted[1]?sorted[1].nome:'2º '+l;
-    if(sorted[2])terc.push(sorted[2]);
+    if(sorted[2])terc.push(Object.assign({grupo:l},sorted[2]));
   });
-  terc.sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;});
-  for(var i=0;i<8;i++)slots['T'+(i+1)]=terc[i]?terc[i].nome:'T'+(i+1);
+  Object.assign(slots,atribuirTerceiros(terc));
   return slots;
 }
 
