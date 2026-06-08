@@ -1312,8 +1312,34 @@ function salvarAdminResultados(){
   }).catch(onErroRPC);
 }
 
+function renderEstadoTorneio(){
+  var est=STATE.estadoTorneio||'previsao';
+  var label=est==='ao_vivo'?'🔥 Ao Vivo':'🎯 Previsão';
+  var h='<div class="card" style="margin-bottom:18px;">';
+  h+='<h4 style="color:var(--gold);margin:0 0 10px">🏆 ESTADO DO TORNEIO</h4>';
+  h+='<p style="margin:0 0 14px">Estado atual: <strong>'+label+'</strong></p>';
+  if(est==='previsao'){
+    h+='<button class="btn-green" onclick="confirmarEstadoTorneio(\'ao_vivo\')">Encerrar Previsão e Liberar Mata-Mata Ao Vivo</button>';
+  }else{
+    h+='<button class="btn-outline" onclick="confirmarEstadoTorneio(\'previsao\')">Voltar para Previsão</button>';
+  }
+  h+='</div>';
+  return h;
+}
+function confirmarEstadoTorneio(novoEstado){
+  var msg=novoEstado==='ao_vivo'
+    ? 'Tem certeza? A aba Previsão será bloqueada para todos. Não esqueça de lançar todos os resultados oficiais da fase de grupos antes.'
+    : 'Tem certeza que deseja voltar para o estado de Previsão? A aba Mata-Mata Ao Vivo voltará a ficar bloqueada.';
+  if(!confirm(msg))return;
+  apiPost({action:'setEstadoTorneio',estado:novoEstado}).then(function(resp){
+    if(!resp||!resp.ok){onErroRPC(resp?resp.error:'Erro');return;}
+    showToast('Estado do torneio atualizado!','success');
+    loadData();
+  }).catch(onErroRPC);
+}
+
 function renderRegras(){
-  var h='<div class="prazo-admin"><label>⏰ Prazo de encerramento dos palpites</label><input type="datetime-local" class="prazo-input" id="prazo-field" value="'+(STATE.prazo||'')+'"><button class="btn-green" style="padding:8px 14px;font-size:11px;" onclick="salvarPrazo()">Salvar</button></div>';
+  var h=renderEstadoTorneio()+'<div class="prazo-admin"><label>⏰ Prazo de encerramento dos palpites</label><input type="datetime-local" class="prazo-input" id="prazo-field" value="'+(STATE.prazo||'')+'"><button class="btn-green" style="padding:8px 14px;font-size:11px;" onclick="salvarPrazo()">Salvar</button></div>';
   Object.keys(STATE.regras).forEach(function(k){
     if(REGRAS_BASE.includes(k)){var lbl=k==='placarExato'?'🎯 Placar Exato':(k==='acertouVencedor'?'✅ Vencedor/Empate':(k==='classifExata'?'📍 Posição Exata':'🔄 Passou de Fase'));h+='<div class="admin-row"><div class="admin-label">'+lbl+'</div><input type="number" class="admin-input-val a-reg" data-k="'+k+'" value="'+STATE.regras[k]+'" min="0"></div>';}
   });

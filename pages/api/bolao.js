@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     }
     if (req.method === 'POST') {
       const { action, ...body } = req.body;
-      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, savePrazo };
+      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, savePrazo, setEstadoTorneio };
       if (!actions[action]) return res.status(400).json({ ok: false, error: 'Ação inválida: ' + action });
       const result = await actions[action](body);
       return res.status(200).json(result);
@@ -36,6 +36,7 @@ async function getData() {
   const part = [], pal = {}, extP = {}, ofi = {}, rankingAnterior = {};
   let reg = { ...REGRAS_PADRAO };
   let prazo = null;
+  let estadoTorneio = 'previsao';
 
   for (let i = 1; i < rows.length; i++) {
     const [t, g, ji, g1, g2, n, ex, pEx] = rows[i];
@@ -57,6 +58,8 @@ async function getData() {
       reg[g] = parseInt(ji);
     } else if (t === 'prazo') {
       prazo = g;
+    } else if (t === 'estado_torneio') {
+      estadoTorneio = g === 'ao_vivo' ? 'ao_vivo' : 'previsao';
     } else if (t === 'ranking_anterior') {
       // col 1 = nome do participante, col 2 = posição
       const rNm = normName(g);
@@ -77,7 +80,7 @@ async function getData() {
   });
   ranking.sort((a, b) => b.pts - a.pts);
 
-  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
+  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
 }
 
 // ── PARTICIPANTES ─────────────────────────────────────────
@@ -227,6 +230,20 @@ async function saveRegras({ regras }) {
     }
   }
   await appendRows(novasLinhas);
+  return { ok: true };
+}
+
+// ── ESTADO DO TORNEIO ─────────────────────────────────────
+async function setEstadoTorneio({ estado }) {
+  const e = (estado || '').trim();
+  if (e !== 'previsao' && e !== 'ao_vivo') return { ok: false, error: 'Estado inválido' };
+  const rows = await readRows();
+  const toDelete = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === 'estado_torneio') toDelete.push(i);
+  }
+  if (toDelete.length) await deleteRows(toDelete);
+  await appendRow(['estado_torneio', e, '', '', '', 'SISTEMA', '', '']);
   return { ok: true };
 }
 
