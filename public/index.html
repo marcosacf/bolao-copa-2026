@@ -304,6 +304,7 @@
   <button class="nav-btn active" onclick="showSection('ranking',this)">🏆 Ranking</button>
   <button class="nav-btn" onclick="showSection('oficiais',this)">📊 Grupos Oficiais</button>
   <button class="nav-btn" onclick="showSection('palpites',this)">🎯 Minha Previsão</button>
+  <button class="nav-btn" onclick="showSection('mmvivo',this)">🔥 Mata-Mata Ao Vivo</button>
   <button class="nav-btn" onclick="showSection('resultados',this)">⚽ Resultados Oficiais</button>
   <button class="nav-btn" onclick="showSection('regras',this)">⚙️ Regras do Jogo</button>
   <button class="nav-btn" onclick="showSection('desempenho',this)">📈 Desempenho</button>
@@ -354,6 +355,12 @@
       <div class="extras-grid" id="extras-container"></div>
       <button class="btn-gold-save-big" onclick="salvarTudoUsuario()">💾 SALVAR MEUS PALPITES</button>
     </div>
+  </section>
+
+  <section class="section" id="section-mmvivo">
+    <div class="section-title">🔥 <span>Mata-Mata</span> Ao Vivo</div>
+    <div id="mmvivo-bloqueado" style="background:rgba(255,200,0,.12);border:1px solid var(--gold);border-radius:10px;padding:30px 18px;margin-bottom:18px;color:var(--gold);font-weight:700;text-align:center;">🔒 Liberado após o encerramento da fase de grupos pelo admin</div>
+    <div id="mmvivo-conteudo" style="display:none;"></div>
   </section>
 
   <section class="section" id="section-resultados">
@@ -492,7 +499,7 @@ function loadData(){
     STATE=d;
     var hs=document.getElementById('header-sub');if(hs&&d.nomeBolao)hs.textContent='EDIÇÃO 2026 · BOLÃO '+d.nomeBolao;
     renderRanking();renderGruposOficiais();renderSelect();popularDatalist();
-    renderAdminResultados();renderBracket('bt-ofi','ofi');renderRegras();
+    renderAdminResultados();renderBracket('bt-ofi','ofi');renderRegras();renderMataMataVivo();
     var sd=document.getElementById('select-desemp'),cur=sd.value;
     sd.innerHTML='<option value="">— Selecione um participante —</option>'+(d.participantes||[]).map(function(p){return '<option value="'+p+'"'+(p===cur?' selected':'')+'>'+p+'</option>';}).join('');
     if(cur)renderDesempenho();
@@ -1347,6 +1354,16 @@ function confirmarEstadoTorneio(novoEstado){
     showToast('Estado do torneio atualizado!','success');
     loadData();
   }).catch(onErroRPC);
+}
+
+function renderMataMataVivo(){
+  var bloqueado=document.getElementById('mmvivo-bloqueado'),conteudo=document.getElementById('mmvivo-conteudo');
+  if(STATE.estadoTorneio!=='ao_vivo'){
+    bloqueado.style.display='block';conteudo.style.display='none';
+    return;
+  }
+  bloqueado.style.display='none';conteudo.style.display='block';
+  conteudo.innerHTML='<div class="card">Em breve: predições do mata-mata ao vivo.</div>';
 }
 
 function renderRegras(){
