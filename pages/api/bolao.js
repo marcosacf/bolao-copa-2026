@@ -1,5 +1,5 @@
 import { readRows, appendRow, appendRows, deleteRows, updateCells } from '../../lib/sheets';
-import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, calcularPontos } from '../../lib/data';
+import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, REGRAS_AOVIVO_PADRAO, calcularPontos } from '../../lib/data';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     }
     if (req.method === 'POST') {
       const { action, ...body } = req.body;
-      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, savePrazo, setEstadoTorneio };
+      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, saveRegrasAoVivo, savePrazo, setEstadoTorneio };
       if (!actions[action]) return res.status(400).json({ ok: false, error: 'Ação inválida: ' + action });
       const result = await actions[action](body);
       return res.status(200).json(result);
@@ -35,6 +35,7 @@ async function getData() {
   const rows = await readRows();
   const part = [], pal = {}, extP = {}, ofi = {}, rankingAnterior = {};
   let reg = { ...REGRAS_PADRAO };
+  let regAoVivo = { ...REGRAS_AOVIVO_PADRAO };
   let prazo = null;
   let estadoTorneio = 'previsao';
 
@@ -56,6 +57,8 @@ async function getData() {
       ofi[g + '-' + ji] = { gols1: parseInt(g1), gols2: parseInt(g2), penaltis: parseInt(ex) || 0 };
     } else if (t === 'regra') {
       reg[g] = parseInt(ji);
+    } else if (t === 'regra_aovivo') {
+      regAoVivo[g] = parseInt(ji);
     } else if (t === 'prazo') {
       prazo = g;
     } else if (t === 'estado_torneio') {
@@ -80,7 +83,7 @@ async function getData() {
   });
   ranking.sort((a, b) => b.pts - a.pts);
 
-  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
+  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
 }
 
 // ── PARTICIPANTES ─────────────────────────────────────────
@@ -227,6 +230,26 @@ async function saveRegras({ regras }) {
     const val = parseInt(regras[k]);
     if (!isNaN(val) && val >= 0) {
       novasLinhas.push(['regra', k, val, '', '', 'SISTEMA', '', '']);
+    }
+  }
+  await appendRows(novasLinhas);
+  return { ok: true };
+}
+
+// ── REGRAS AO VIVO ────────────────────────────────────────
+async function saveRegrasAoVivo({ regras }) {
+  if (!regras || typeof regras !== 'object') return { ok: false, error: 'Regras inválidas' };
+  const rows = await readRows();
+  const toDelete = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === 'regra_aovivo') toDelete.push(i);
+  }
+  if (toDelete.length) await deleteRows(toDelete);
+  const novasLinhas = [];
+  for (const k of Object.keys(regras)) {
+    const val = parseInt(regras[k]);
+    if (!isNaN(val) && val >= 0) {
+      novasLinhas.push(['regra_aovivo', k, val, '', '', 'SISTEMA', '', '']);
     }
   }
   await appendRows(novasLinhas);

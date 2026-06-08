@@ -1340,11 +1340,17 @@ function confirmarEstadoTorneio(novoEstado){
 
 function renderRegras(){
   var h=renderEstadoTorneio()+'<div class="prazo-admin"><label>⏰ Prazo de encerramento dos palpites</label><input type="datetime-local" class="prazo-input" id="prazo-field" value="'+(STATE.prazo||'')+'"><button class="btn-green" style="padding:8px 14px;font-size:11px;" onclick="salvarPrazo()">Salvar</button></div>';
+  h+='<h4 style="color:var(--gold);margin-top:20px;margin-bottom:10px">🎯 Pontuação da Previsão</h4>';
   Object.keys(STATE.regras).forEach(function(k){
     if(REGRAS_BASE.includes(k)){var lbl=k==='placarExato'?'🎯 Placar Exato':(k==='acertouVencedor'?'✅ Vencedor/Empate':(k==='classifExata'?'📍 Posição Exata':'🔄 Passou de Fase'));h+='<div class="admin-row"><div class="admin-label">'+lbl+'</div><input type="number" class="admin-input-val a-reg" data-k="'+k+'" value="'+STATE.regras[k]+'" min="0"></div>';}
   });
   h+='<h4 style="color:var(--gold);margin-top:30px;margin-bottom:10px">Especiais</h4>';
   Object.keys(STATE.regras).forEach(function(k){if(!REGRAS_BASE.includes(k))h+='<div class="admin-row"><div class="admin-label">'+getEmoji(k)+' '+k+'</div><input type="number" class="admin-input-val a-reg" data-k="'+k+'" value="'+STATE.regras[k]+'" min="0"></div>';});
+  h+='<h4 style="color:var(--gold);margin-top:30px;margin-bottom:10px">🔥 Pontuação Mata-Mata Ao Vivo</h4>';
+  var lblsVivo={placarExato:'🎯 Placar Exato',acertouVencedor:'✅ Vencedor'};
+  Object.keys(STATE.regrasAoVivo||{}).forEach(function(k){
+    h+='<div class="admin-row"><div class="admin-label">'+(lblsVivo[k]||k)+'</div><input type="number" class="admin-input-val a-reg-vivo" data-k="'+k+'" value="'+STATE.regrasAoVivo[k]+'" min="0"></div>';
+  });
   document.getElementById('regras-lista-container').innerHTML=h;
   parseEmojis(document.getElementById('regras-lista-container'));
 }
@@ -1414,8 +1420,11 @@ function salvarAdminRegras(){
   var btn=document.querySelector('#section-regras .btn-gold-save-big');
   if(btn){btn.disabled=true;btn.classList.add('btn-loading');btn.textContent='⏳ SALVANDO...';}
   var r={};document.querySelectorAll('.a-reg').forEach(function(i){r[i.dataset.k]=parseInt(i.value)||0;});
-  apiPost({action:'saveRegras',regras:r}).then(function(resp){
-    _reabilitarBotoesSalvar();if(resp&&!resp.ok){onErroRPC(resp.error);return;}
+  var rv={};document.querySelectorAll('.a-reg-vivo').forEach(function(i){rv[i.dataset.k]=parseInt(i.value)||0;});
+  Promise.all([apiPost({action:'saveRegras',regras:r}),apiPost({action:'saveRegrasAoVivo',regras:rv})]).then(function(resps){
+    _reabilitarBotoesSalvar();
+    var erro=resps.find(function(resp){return !resp||!resp.ok;});
+    if(erro){onErroRPC(erro?erro.error:'Erro');return;}
     showToast('Regras salvas!','success');loadData();
   }).catch(onErroRPC);
 }
