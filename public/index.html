@@ -59,7 +59,7 @@
     .header::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent 0%, var(--gold-deep) 20%, var(--gold) 50%, var(--gold-deep) 80%, transparent 100%); z-index: 1; }
     .header::after { content: '● LIVE'; position: absolute; top: 52px; right: 40px; font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.22em; color: var(--gold); padding: 5px 14px; border: 1px solid rgba(0,212,255,0.35); border-radius: var(--radius-sm); background: rgba(0,212,255,0.07); z-index: 3; }
     .header h1 { font-family: var(--font-display) !important; font-size: clamp(44px, 6vw, 88px); font-weight: 900; color: var(--text); letter-spacing: 0.04em; line-height: 1; text-transform: uppercase; }
-    .header h1::after { content: 'EDIÇÃO 2026 · BOLÃO STUPENDO'; display: block; margin-top: 14px; font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.36em; color: var(--muted2); }
+    .header-sub { display: block; margin-top: 14px; font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.36em; color: var(--muted2); text-transform: uppercase; }
 
     .nav { position: sticky; top: 0; z-index: 100; display: grid; grid-template-columns: repeat(6, 1fr); background: rgba(6,9,18,0.97); backdrop-filter: blur(24px) saturate(200%); border-bottom: 1px solid var(--border-strong); width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.6); }
     .nav-btn { padding: 15px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--muted2); font-weight: 600; font-size: 12px; font-family: var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; text-align: center; }
@@ -299,7 +299,7 @@
   </style>
 </head>
 <body>
-<header class="header"><h1>COPA DO MUNDO 2026</h1></header>
+<header class="header"><h1>COPA DO MUNDO 2026</h1><div class="header-sub" id="header-sub">EDIÇÃO 2026 · BOLÃO</div></header>
 <nav class="nav" role="tablist">
   <button class="nav-btn active" onclick="showSection('ranking',this)">🏆 Ranking</button>
   <button class="nav-btn" onclick="showSection('oficiais',this)">📊 Grupos Oficiais</button>
@@ -473,6 +473,7 @@ function loadData(){
   apiGet().then(function(d){
     if(!d||!d.ok){onErroRPC(d?d.error:'Sem resposta');return;}
     STATE=d;
+    var hs=document.getElementById('header-sub');if(hs&&d.nomeBolao)hs.textContent='EDIÇÃO 2026 · BOLÃO '+d.nomeBolao;
     renderRanking();renderGruposOficiais();renderSelect();popularDatalist();
     renderAdminResultados();renderBracket('bt-ofi','ofi');renderRegras();
     var sd=document.getElementById('select-desemp'),cur=sd.value;

@@ -77,7 +77,7 @@ async function getData() {
   });
   ranking.sort((a, b) => b.pts - a.pts);
 
-  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior };
+  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
 }
 
 // ── PARTICIPANTES ─────────────────────────────────────────
