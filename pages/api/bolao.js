@@ -1,5 +1,5 @@
 import { readRows, appendRow, appendRows, deleteRows, updateCells } from '../../lib/sheets';
-import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, REGRAS_AOVIVO_PADRAO, calcularPontos } from '../../lib/data';
+import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, REGRAS_AOVIVO_PADRAO, calcularPontos, calcularPontosAoVivo } from '../../lib/data';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -86,7 +86,8 @@ async function getData() {
 
   const ranking = part.map(nm => {
     const c = calcularPontos(nm, palFiltrado[nm] || [], extPFiltrado[nm] || {}, ofi, reg);
-    return { nome: nm, pts: c.total, detalhes: c };
+    const cv = calcularPontosAoVivo(palMMVivoFiltrado[nm] || [], ofi, regAoVivo);
+    return { nome: nm, pts: c.total + cv.total, ptsPrevisao: c.total, ptsAoVivo: cv.total, detalhes: c, detalhesAoVivo: cv };
   });
   ranking.sort((a, b) => b.pts - a.pts);
 
