@@ -870,8 +870,15 @@ var FIFA_ANNEX_C = {
   "ACDEFGHI": ["C","G","E","D","A","F","H","I"]
 };
 
+// Ranking FIFA/Coca-Cola (ordem do melhor para o pior) — usado como critério de desempate final entre 3ºs colocados
+var RANKING_FIFA_ORDEM=["Argentina","França","Inglaterra","Brasil","Portugal","Espanha","Bélgica","Holanda","Alemanha","Croácia","Uruguai","Estados Unidos","México","Suíça","Senegal","Japão","Marrocos","Coreia do Sul","Dinamarca","Equador","Canadá","Noruega","Turquia","Austrália","Áustria","Colômbia","Suécia","Costa do Marfim","Irã","Escócia","República Tcheca","Egito","Paraguai","Argélia","Uzbequistão","Gana","Haiti","Jordânia","Arábia Saudita","Bósnia","RD Congo","Tunísia","Cabo Verde","África do Sul","Catar","Iraque","Curaçao","Nova Zelândia","Panamá"];
+var RANKING_FIFA={};RANKING_FIFA_ORDEM.forEach(function(n,i){RANKING_FIFA[n]=i;});
+function rankFifa(nome){var r=RANKING_FIFA[nome];return r===undefined?999:r;}
+
 function atribuirTerceiros(tercList){
-  var qualif=tercList.filter(function(x){return x.j>0;}).sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;}).slice(0,8);
+  var qualif=tercList.filter(function(x){return x.j>0;}).sort(function(a,b){
+    return b.pts-a.pts || b.sg-a.sg || b.gp-a.gp || rankFifa(a.nome)-rankFifa(b.nome);
+  }).slice(0,8);
   var slots={};
 
   if(qualif.length===8){
