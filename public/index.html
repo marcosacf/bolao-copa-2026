@@ -580,11 +580,24 @@ function renderBracket(containerId,tipo){
 // a ordem oficial de prioridade da FIFA (cada slot só aceita 3ºs de um grupo de origens específico)
 function atribuirTerceiros(tercList){
   var qualif=tercList.filter(function(x){return x.j>0;}).sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;}).slice(0,8);
-  var pool=qualif.slice(),slots={};
+  var assign=new Array(THIRD_SLOTS.length).fill(-1);
+  var used=new Array(qualif.length).fill(false);
+  function backtrack(slotIdx){
+    if(slotIdx===THIRD_SLOTS.length) return true;
+    var cand=THIRD_SLOTS[slotIdx].cand;
+    for(var t=0;t<qualif.length;t++){
+      if(!used[t] && cand.indexOf(qualif[t].grupo)!==-1){
+        used[t]=true; assign[slotIdx]=t;
+        if(backtrack(slotIdx+1)) return true;
+        used[t]=false; assign[slotIdx]=-1;
+      }
+    }
+    return false;
+  }
+  backtrack(0);
+  var slots={};
   THIRD_SLOTS.forEach(function(slot,i){
-    var idx=pool.findIndex(function(t){return slot.cand.indexOf(t.grupo)!==-1;});
-    if(idx!==-1){slots['Q'+i]=pool[idx].nome;pool.splice(idx,1);}
-    else slots['Q'+i]='3º Classificado';
+    slots['Q'+i] = assign[i]!==-1 ? qualif[assign[i]].nome : '3º Classificado';
   });
   return slots;
 }
