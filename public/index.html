@@ -1495,7 +1495,7 @@ function renderRegras(){
   h+='<h4 style="color:var(--gold);margin-top:30px;margin-bottom:10px">Especiais</h4>';
   Object.keys(STATE.regras).forEach(function(k){if(!REGRAS_BASE.includes(k))h+='<div class="admin-row"><div class="admin-label">'+getEmoji(k)+' '+k+'</div><input type="number" class="admin-input-val a-reg" data-k="'+k+'" value="'+STATE.regras[k]+'" min="0"></div>';});
   h+='<h4 style="color:var(--gold);margin-top:30px;margin-bottom:10px">🔥 Pontuação Mata-Mata Ao Vivo</h4>';
-  var lblsVivo={placarExato:'🎯 Placar Exato',acertouVencedor:'✅ Vencedor',acertouEmpate:'🤝 Empate (sem cravar placar)',acertouClassificado:'🥅 Classificado nos pênaltis'};
+  var lblsVivo={placarExato:'🎯 Placar Exato',acertouVencedor:'✅ Vencedor/Empate (sem cravar placar)',acertouClassificado:'🥅 Classificado em caso de empate'};
   Object.keys(STATE.regrasAoVivo||{}).forEach(function(k){
     h+='<div class="admin-row"><div class="admin-label">'+(lblsVivo[k]||k)+'</div><input type="number" class="admin-input-val a-reg-vivo" data-k="'+k+'" value="'+STATE.regrasAoVivo[k]+'" min="0"></div>';
   });
