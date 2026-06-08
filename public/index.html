@@ -361,7 +361,16 @@
   <section class="section" id="section-mmvivo">
     <div class="section-title">🔥 <span>Mata-Mata</span> Ao Vivo</div>
     <div id="mmvivo-bloqueado" style="background:rgba(255,200,0,.12);border:1px solid var(--gold);border-radius:10px;padding:30px 18px;margin-bottom:18px;color:var(--gold);font-weight:700;text-align:center;">🔒 Liberado após o encerramento da fase de grupos pelo admin</div>
-    <div id="mmvivo-conteudo" style="display:none;"></div>
+    <div id="mmvivo-conteudo" style="display:none;">
+      <div class="selection-row" style="margin-bottom:20px;">
+        <select id="select-mmv" class="select-styled" onchange="onSelectMMV()"><option value="">— Selecione seu nome —</option></select>
+      </div>
+      <div id="mmvivo-bracket-area" style="display:none;">
+        <p class="mobile-bracket-hint">👆 Arraste para os lados</p>
+        <div class="bracket-outer" id="bw-mmv"><div class="bracket-tree" id="bt-mmv"></div></div>
+        <button class="btn-gold-save-big" style="margin-top:30px;" onclick="salvarMataMataVivo()">💾 SALVAR MATA-MATA AO VIVO</button>
+      </div>
+    </div>
   </section>
 
   <section class="section" id="section-resultados">
@@ -1265,7 +1274,6 @@ function loadPalpites(){
   _palpitesModificados=false;atualizarMiniRanking(n);verificarPrazo();gerarSimula();
   parseEmojis(document.getElementById('tab-jogos-grupos'));
   aplicarBloqueioPrevisao();
-  if(STATE.estadoTorneio==='ao_vivo'&&document.getElementById('mmvivo-conteudo').dataset.built)renderBracketVivo();
 }
 
 function aplicarBloqueioPrevisao(){
@@ -1392,12 +1400,15 @@ function renderMataMataVivo(){
     return;
   }
   bloqueado.style.display='none';conteudo.style.display='block';
-  if(!conteudo.dataset.built){
-    conteudo.innerHTML='<p class="mobile-bracket-hint">👆 Arraste para os lados</p>'
-      +'<div class="bracket-outer" id="bw-mmv"><div class="bracket-tree" id="bt-mmv"></div></div>'
-      +'<button class="btn-gold-save-big" style="margin-top:30px;" onclick="salvarMataMataVivo()">💾 SALVAR MATA-MATA AO VIVO</button>';
-    conteudo.dataset.built='1';
-  }
+  var sel=document.getElementById('select-mmv'),cur=sel.value;
+  sel.innerHTML='<option value="">— Selecione seu nome —</option>'+(STATE.participantes||[]).map(function(p){return '<option value="'+p+'"'+(p===cur?' selected':'')+'>'+p+'</option>';}).join('');
+  if(sel.value)renderBracketVivo();else document.getElementById('mmvivo-bracket-area').style.display='none';
+}
+
+function onSelectMMV(){
+  var n=document.getElementById('select-mmv').value;
+  if(!n){document.getElementById('mmvivo-bracket-area').style.display='none';return;}
+  document.getElementById('mmvivo-bracket-area').style.display='block';
   renderBracketVivo();
 }
 
@@ -1412,7 +1423,7 @@ function getMMVivoStruct(){
 }
 
 function renderBracketVivo(){
-  var n=document.getElementById('select-participante').value;
+  var n=document.getElementById('select-mmv').value;
   var mmv=getMMVivoStruct();
   var palpites=(STATE.palpitesMMVivo&&STATE.palpitesMMVivo[n])||[];
   var container=document.getElementById('bt-mmv');container.innerHTML='';
@@ -1454,8 +1465,8 @@ function _gerarSimulaVivoImpl(){
 var gerarSimulaVivo=debounce(_gerarSimulaVivoImpl,300);
 
 function salvarMataMataVivo(){
-  var n=document.getElementById('select-participante').value;
-  if(!n){showToast('Selecione seu nome em "Minha Previsão" primeiro.','error');return;}
+  var n=document.getElementById('select-mmv').value;
+  if(!n){showToast('Selecione seu nome.','error');return;}
   var btn=document.querySelector('#mmvivo-conteudo .btn-gold-save-big');
   if(btn){btn.disabled=true;btn.classList.add('btn-loading');btn.textContent='⏳ SALVANDO...';}
   var pal=[];
@@ -1484,7 +1495,7 @@ function renderRegras(){
   h+='<h4 style="color:var(--gold);margin-top:30px;margin-bottom:10px">Especiais</h4>';
   Object.keys(STATE.regras).forEach(function(k){if(!REGRAS_BASE.includes(k))h+='<div class="admin-row"><div class="admin-label">'+getEmoji(k)+' '+k+'</div><input type="number" class="admin-input-val a-reg" data-k="'+k+'" value="'+STATE.regras[k]+'" min="0"></div>';});
   h+='<h4 style="color:var(--gold);margin-top:30px;margin-bottom:10px">🔥 Pontuação Mata-Mata Ao Vivo</h4>';
-  var lblsVivo={placarExato:'🎯 Placar Exato',acertouVencedor:'✅ Vencedor'};
+  var lblsVivo={placarExato:'🎯 Placar Exato',acertouVencedor:'✅ Vencedor',acertouEmpate:'🤝 Empate (sem cravar placar)',acertouClassificado:'🥅 Classificado nos pênaltis'};
   Object.keys(STATE.regrasAoVivo||{}).forEach(function(k){
     h+='<div class="admin-row"><div class="admin-label">'+(lblsVivo[k]||k)+'</div><input type="number" class="admin-input-val a-reg-vivo" data-k="'+k+'" value="'+STATE.regrasAoVivo[k]+'" min="0"></div>';
   });
