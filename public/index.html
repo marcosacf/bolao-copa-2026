@@ -272,8 +272,31 @@
       .mobile-bracket-hint { display: block; }
     }
     @media (max-width: 560px) {
-      .nav { overflow-x: auto; }
-      .nav-btn { padding: 12px 6px; font-size: 9px; }
+      .nav {
+        position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+        grid-template-columns: repeat(6, 1fr);
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        box-shadow: 0 -8px 28px rgba(0,0,0,0.6);
+        border-bottom: none; border-top: 1px solid var(--border-strong);
+      }
+      .nav-btn {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 3px; padding: 9px 2px 8px; font-size: 8.5px; line-height: 1.15;
+        white-space: normal; border-bottom: none; border-top: 2px solid transparent;
+      }
+      .nav-btn.active { border-top-color: var(--gold); border-bottom-color: transparent; }
+      .header { padding: 22px 16px 20px; }
+      .header h1 { font-size: 28px; letter-spacing: 0.04em; }
+      .main { padding: 16px 12px 96px; }
+      .jogo-card { grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 6px 10px; padding: 12px; }
+      .jogo-card .jogo-placar { grid-column: 1 / -1; justify-content: center; order: 3; }
+      .jogo-card .jogo-time.right { grid-row: 1; }
+      .placar-input, .bm-inp { width: 46px; height: 38px; font-size: 16px; }
+      .rank-item { grid-template-columns: 50px 1fr auto; gap: 10px; padding: 12px 14px 12px 0; }
+      .rank-pos { font-size: 28px; padding-left: 12px; }
+      .rank-pos.p1 { font-size: 36px; }
+      .modal { padding: 18px; }
+      .b-col { width: 160px; }
     }
   </style>
 </head>
