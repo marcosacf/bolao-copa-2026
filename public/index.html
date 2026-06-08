@@ -498,7 +498,7 @@ function cardHTML(fase,match,pv,ic,oi){
     +'<span style="color:var(--muted);font-size:10px">×</span>'
     +'<input type="number" class="bm-inp '+ic+'" data-s="2" value="'+g2+'" min="0" max="99" oninput="'+oi+'">'
     +'</div>'
-    +'<div class="bm-pen'+(pen>0?' show':'')+'"><select onchange="'+oi+'; if(this.value!=\'0\'){ var p=this.closest(\'.bm-pen\'); setTimeout(function(){p.classList.remove(\'show\');p.setAttribute(\'data-closed\',\'1\');},150); }">'
+    +'<div class="bm-pen" data-closed="'+(pen>0?'1':'')+'"><select onchange="'+oi+'; if(this.value!=\'0\'){ var p=this.closest(\'.bm-pen\'); setTimeout(function(){p.classList.remove(\'show\');p.setAttribute(\'data-closed\',\'1\');},150); }">'
     +'<option value="0">Pênaltis: quem avança?</option>'
     +'<option value="1"'+(pen==1?' selected':'')+'>T1 Avança</option>'
     +'<option value="2"'+(pen==2?' selected':'')+'>T2 Avança</option>'
