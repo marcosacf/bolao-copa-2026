@@ -61,8 +61,8 @@
     .header h1 { font-family: var(--font-display) !important; font-size: clamp(44px, 6vw, 88px); font-weight: 900; color: var(--text); letter-spacing: 0.04em; line-height: 1; text-transform: uppercase; }
     .header-sub { display: block; margin-top: 14px; font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.36em; color: var(--muted2); text-transform: uppercase; }
 
-    .nav { position: sticky; top: 0; z-index: 100; display: grid; grid-template-columns: repeat(6, 1fr); background: rgba(6,9,18,0.97); backdrop-filter: blur(24px) saturate(200%); border-bottom: 1px solid var(--border-strong); width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.6); }
-    .nav-btn { padding: 15px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--muted2); font-weight: 600; font-size: 12px; font-family: var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; text-align: center; }
+    .nav { position: sticky; top: 0; z-index: 100; display: grid; grid-template-columns: repeat(7, 1fr); background: rgba(6,9,18,0.97); backdrop-filter: blur(24px) saturate(200%); border-bottom: 1px solid var(--border-strong); width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.6); }
+    .nav-btn { padding: 15px 10px; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--muted2); font-weight: 600; font-size: 11px; font-family: var(--font-ui); letter-spacing: 0.05em; text-transform: uppercase; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; text-align: center; }
     .nav-btn:hover { color: var(--text); background: rgba(0,212,255,0.04); }
     .nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); background: rgba(0,212,255,0.07); font-weight: 700; }
 
@@ -273,7 +273,7 @@
     @media (max-width: 560px) {
       .nav {
         position: fixed; top: auto; bottom: 0; left: 0; right: 0;
-        grid-template-columns: repeat(6, 1fr);
+        grid-template-columns: repeat(7, 1fr);
         padding-bottom: env(safe-area-inset-bottom, 0);
         box-shadow: 0 -8px 28px rgba(0,0,0,0.6);
         border-bottom: none; border-top: 1px solid var(--border-strong);
