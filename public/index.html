@@ -303,7 +303,7 @@
 <nav class="nav" role="tablist">
   <button class="nav-btn active" onclick="showSection('ranking',this)">🏆 Ranking</button>
   <button class="nav-btn" onclick="showSection('oficiais',this)">📊 Grupos Oficiais</button>
-  <button class="nav-btn" onclick="showSection('palpites',this)">🎯 Meus Palpites</button>
+  <button class="nav-btn" onclick="showSection('palpites',this)">🎯 Minha Previsão</button>
   <button class="nav-btn" onclick="showSection('resultados',this)">⚽ Resultados Oficiais</button>
   <button class="nav-btn" onclick="showSection('regras',this)">⚙️ Regras do Jogo</button>
   <button class="nav-btn" onclick="showSection('desempenho',this)">📈 Desempenho</button>
@@ -331,7 +331,8 @@
   </div>
 
   <section class="section" id="section-palpites">
-    <div class="section-title">🎯 <span>Meus</span> Palpites</div>
+    <div class="section-title">🎯 <span>Minha</span> Previsão</div>
+    <div id="previsao-bloqueada-banner" style="display:none;background:rgba(255,200,0,.12);border:1px solid var(--gold);border-radius:10px;padding:14px 18px;margin-bottom:18px;color:var(--gold);font-weight:700;text-align:center;">🔒 Previsão encerrada — agora preencha o Mata-Mata Ao Vivo!</div>
     <div class="selection-row">
       <select id="select-participante" class="select-styled" onchange="loadPalpites()"><option value="">— Selecione seu nome —</option></select>
       <button class="btn-create" onclick="openModal('add')">➕ Novo Usuário</button>
@@ -1254,6 +1255,16 @@ function loadPalpites(){
   document.getElementById('extras-container').innerHTML=hExt;
   _palpitesModificados=false;atualizarMiniRanking(n);verificarPrazo();gerarSimula();
   parseEmojis(document.getElementById('tab-jogos-grupos'));
+  aplicarBloqueioPrevisao();
+}
+
+function aplicarBloqueioPrevisao(){
+  var bloqueado=STATE.estadoTorneio==='ao_vivo';
+  var banner=document.getElementById('previsao-bloqueada-banner');
+  if(banner)banner.style.display=bloqueado?'block':'none';
+  document.querySelectorAll('#palpites-master .p-in, #palpites-master .ex-in').forEach(function(i){i.disabled=bloqueado;});
+  var btn=document.querySelector('#palpites-master .btn-gold-save-big');
+  if(btn)btn.style.display=bloqueado?'none':'';
 }
 
 function salvarTudoUsuario(){
