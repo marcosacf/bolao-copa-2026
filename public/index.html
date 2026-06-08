@@ -1345,11 +1345,27 @@ function renderEstadoTorneio(){
   return h;
 }
 function confirmarEstadoTorneio(novoEstado){
-  var msg=novoEstado==='ao_vivo'
-    ? 'Tem certeza? A aba Previsão será bloqueada para todos. Não esqueça de lançar todos os resultados oficiais da fase de grupos antes.'
-    : 'Tem certeza que deseja voltar para o estado de Previsão? A aba Mata-Mata Ao Vivo voltará a ficar bloqueada.';
-  if(!confirm(msg))return;
-  apiPost({action:'setEstadoTorneio',estado:novoEstado}).then(function(resp){
+  if(novoEstado==='ao_vivo'){
+    var faltam=0;
+    Object.keys(STATE.grupos).forEach(function(l){
+      STATE.grupos[l].jogos.forEach(function(_,i){if(!STATE.oficiais[l+'-'+i])faltam++;});
+    });
+    if(faltam>0){alert('Faltam '+faltam+' jogos sem resultado oficial. Lance todos os resultados da fase de grupos antes de liberar o Mata-Mata Ao Vivo.');return;}
+    if(!confirm('Tem certeza? A aba Previsão será bloqueada para todos e o chaveamento oficial do mata-mata será gerado a partir dos resultados oficiais. Essa ação pode ser revertida depois.'))return;
+    var slots=getSlotsClasficacao();
+    var jogos=MM.R32.map(function(m){return {id:m.id,p1:slots[m.p1]||m.p1,p2:slots[m.p2]||m.p2};});
+    apiPost({action:'saveChaveamentoOficial',jogos:jogos}).then(function(resp){
+      if(!resp||!resp.ok){onErroRPC(resp?resp.error:'Erro');return;}
+      return apiPost({action:'setEstadoTorneio',estado:'ao_vivo'});
+    }).then(function(resp){
+      if(!resp||!resp.ok){onErroRPC(resp?resp.error:'Erro');return;}
+      showToast('Mata-Mata Ao Vivo liberado!','success');
+      loadData();
+    }).catch(onErroRPC);
+    return;
+  }
+  if(!confirm('Tem certeza que deseja voltar para o estado de Previsão? A aba Mata-Mata Ao Vivo voltará a ficar bloqueada.'))return;
+  apiPost({action:'setEstadoTorneio',estado:'previsao'}).then(function(resp){
     if(!resp||!resp.ok){onErroRPC(resp?resp.error:'Erro');return;}
     showToast('Estado do torneio atualizado!','success');
     loadData();

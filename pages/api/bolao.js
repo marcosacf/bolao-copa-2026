@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     }
     if (req.method === 'POST') {
       const { action, ...body } = req.body;
-      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, saveRegrasAoVivo, savePrazo, setEstadoTorneio };
+      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, saveRegrasAoVivo, savePrazo, setEstadoTorneio, saveChaveamentoOficial };
       if (!actions[action]) return res.status(400).json({ ok: false, error: 'Ação inválida: ' + action });
       const result = await actions[action](body);
       return res.status(200).json(result);
@@ -33,7 +33,7 @@ function isValidScore(v) { return Number.isInteger(v) && v >= 0 && v <= 99; }
 // ── GET ──────────────────────────────────────────────────
 async function getData() {
   const rows = await readRows();
-  const part = [], pal = {}, extP = {}, ofi = {}, rankingAnterior = {};
+  const part = [], pal = {}, extP = {}, ofi = {}, rankingAnterior = {}, chaveamentoOficial = {};
   let reg = { ...REGRAS_PADRAO };
   let regAoVivo = { ...REGRAS_AOVIVO_PADRAO };
   let prazo = null;
@@ -63,6 +63,8 @@ async function getData() {
       prazo = g;
     } else if (t === 'estado_torneio') {
       estadoTorneio = g === 'ao_vivo' ? 'ao_vivo' : 'previsao';
+    } else if (t === 'chaveamento_oficial') {
+      chaveamentoOficial[g] = ex;
     } else if (t === 'ranking_anterior') {
       // col 1 = nome do participante, col 2 = posição
       const rNm = normName(g);
@@ -83,7 +85,7 @@ async function getData() {
   });
   ranking.sort((a, b) => b.pts - a.pts);
 
-  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
+  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, chaveamentoOficial, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
 }
 
 // ── PARTICIPANTES ─────────────────────────────────────────
@@ -252,6 +254,20 @@ async function saveRegrasAoVivo({ regras }) {
       novasLinhas.push(['regra_aovivo', k, val, '', '', 'SISTEMA', '', '']);
     }
   }
+  await appendRows(novasLinhas);
+  return { ok: true };
+}
+
+// ── CHAVEAMENTO OFICIAL (Mata-Mata Ao Vivo) ──────────────
+async function saveChaveamentoOficial({ jogos }) {
+  if (!Array.isArray(jogos)) return { ok: false, error: 'Chaveamento inválido' };
+  const rows = await readRows();
+  const toDelete = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === 'chaveamento_oficial') toDelete.push(i);
+  }
+  if (toDelete.length) await deleteRows(toDelete);
+  const novasLinhas = jogos.map(j => ['chaveamento_oficial', String(j.id), '', '', '', 'SISTEMA', (j.p1 || '') + '|' + (j.p2 || ''), '']);
   await appendRows(novasLinhas);
   return { ok: true };
 }
