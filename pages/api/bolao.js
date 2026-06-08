@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     }
     if (req.method === 'POST') {
       const { action, ...body } = req.body;
-      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, saveRegrasAoVivo, savePrazo, setEstadoTorneio, saveChaveamentoOficial };
+      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, saveRegrasAoVivo, savePrazo, setEstadoTorneio, saveChaveamentoOficial, savePalpiteMataMataVivo };
       if (!actions[action]) return res.status(400).json({ ok: false, error: 'Ação inválida: ' + action });
       const result = await actions[action](body);
       return res.status(200).json(result);
@@ -33,7 +33,7 @@ function isValidScore(v) { return Number.isInteger(v) && v >= 0 && v <= 99; }
 // ── GET ──────────────────────────────────────────────────
 async function getData() {
   const rows = await readRows();
-  const part = [], pal = {}, extP = {}, ofi = {}, rankingAnterior = {}, chaveamentoOficial = {};
+  const part = [], pal = {}, extP = {}, ofi = {}, rankingAnterior = {}, chaveamentoOficial = {}, palMMVivo = {};
   let reg = { ...REGRAS_PADRAO };
   let regAoVivo = { ...REGRAS_AOVIVO_PADRAO };
   let prazo = null;
@@ -65,6 +65,10 @@ async function getData() {
       estadoTorneio = g === 'ao_vivo' ? 'ao_vivo' : 'previsao';
     } else if (t === 'chaveamento_oficial') {
       chaveamentoOficial[g] = ex;
+    } else if (t === 'palpite_mm_vivo') {
+      if (!nm) continue;
+      if (!palMMVivo[nm]) palMMVivo[nm] = [];
+      palMMVivo[nm].push({ matchId: parseInt(g), gols1: parseInt(g1), gols2: parseInt(g2), penaltis: parseInt(ex) || 0 });
     } else if (t === 'ranking_anterior') {
       // col 1 = nome do participante, col 2 = posição
       const rNm = normName(g);
@@ -73,10 +77,11 @@ async function getData() {
   }
 
   // Bug fix: só retorna palpites de participantes cadastrados
-  const palFiltrado = {}, extPFiltrado = {};
+  const palFiltrado = {}, extPFiltrado = {}, palMMVivoFiltrado = {};
   for (const nm of part) {
     if (pal[nm]) palFiltrado[nm] = pal[nm];
     if (extP[nm]) extPFiltrado[nm] = extP[nm];
+    if (palMMVivo[nm]) palMMVivoFiltrado[nm] = palMMVivo[nm];
   }
 
   const ranking = part.map(nm => {
@@ -85,7 +90,7 @@ async function getData() {
   });
   ranking.sort((a, b) => b.pts - a.pts);
 
-  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, chaveamentoOficial, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
+  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, chaveamentoOficial, palpitesMMVivo: palMMVivoFiltrado, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
 }
 
 // ── PARTICIPANTES ─────────────────────────────────────────
@@ -115,7 +120,7 @@ async function removeParticipant({ nome }) {
     const nomePrincipal = normName(rows[i][5]); // col 5 = nome na maioria dos tipos
     const nomeRanking = normName(rows[i][1]);   // col 1 = nome no ranking_anterior
 
-    const ehDado = ['participante', 'palpite', 'palpite_extra'].includes(tipo) && nomePrincipal === n;
+    const ehDado = ['participante', 'palpite', 'palpite_extra', 'palpite_mm_vivo'].includes(tipo) && nomePrincipal === n;
     const ehRanking = tipo === 'ranking_anterior' && nomeRanking === n;
 
     if (ehDado || ehRanking) toDelete.push(i);
@@ -255,6 +260,26 @@ async function saveRegrasAoVivo({ regras }) {
     }
   }
   await appendRows(novasLinhas);
+  return { ok: true };
+}
+
+// ── PALPITES MATA-MATA AO VIVO ────────────────────────────
+async function savePalpiteMataMataVivo({ nome, palpites }) {
+  const n = normName(nome);
+  if (!n) return { ok: false, error: 'Nome inválido' };
+  for (const p of (palpites || [])) {
+    if (!isValidScore(p.gols1) || !isValidScore(p.gols2)) {
+      return { ok: false, error: 'Placar inválido' };
+    }
+  }
+  const rows = await readRows();
+  const toDelete = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === 'palpite_mm_vivo' && normName(rows[i][5]) === n) toDelete.push(i);
+  }
+  if (toDelete.length) await deleteRows(toDelete);
+  const newRows = (palpites || []).map(p => ['palpite_mm_vivo', p.matchId, '', p.gols1, p.gols2, n, p.penaltis || 0, '']);
+  await appendRows(newRows);
   return { ok: true };
 }
 

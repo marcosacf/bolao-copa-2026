@@ -1263,6 +1263,7 @@ function loadPalpites(){
   _palpitesModificados=false;atualizarMiniRanking(n);verificarPrazo();gerarSimula();
   parseEmojis(document.getElementById('tab-jogos-grupos'));
   aplicarBloqueioPrevisao();
+  if(STATE.estadoTorneio==='ao_vivo'&&document.getElementById('mmvivo-conteudo').dataset.built)renderBracketVivo();
 }
 
 function aplicarBloqueioPrevisao(){
@@ -1379,7 +1380,87 @@ function renderMataMataVivo(){
     return;
   }
   bloqueado.style.display='none';conteudo.style.display='block';
-  conteudo.innerHTML='<div class="card">Em breve: predições do mata-mata ao vivo.</div>';
+  if(!conteudo.dataset.built){
+    conteudo.innerHTML='<p class="mobile-bracket-hint">👆 Arraste para os lados</p>'
+      +'<div class="bracket-outer" id="bw-mmv"><div class="bracket-tree" id="bt-mmv"></div></div>'
+      +'<button class="btn-gold-save-big" style="margin-top:30px;" onclick="salvarMataMataVivo()">💾 SALVAR MATA-MATA AO VIVO</button>';
+    conteudo.dataset.built='1';
+  }
+  renderBracketVivo();
+}
+
+function getMMVivoStruct(){
+  var mmv={R32:[],R16:MM.R16,QF:MM.QF,SF:MM.SF,FI:MM.FI};
+  MM.R32.forEach(function(m){
+    var ch=(STATE.chaveamentoOficial||{})[String(m.id)]||'';
+    var times=ch.split('|');
+    mmv.R32.push({id:m.id,p1:times[0]||'?',p2:times[1]||'?'});
+  });
+  return mmv;
+}
+
+function renderBracketVivo(){
+  var n=document.getElementById('select-participante').value;
+  var mmv=getMMVivoStruct();
+  var palpites=(STATE.palpitesMMVivo&&STATE.palpitesMMVivo[n])||[];
+  var container=document.getElementById('bt-mmv');container.innerHTML='';
+  FASES.forEach(function(fase,fi){
+    var matches=mmv[fase.k],count=matches.length,GAP=35,baseSlot=BM_H+GAP,slotH=baseSlot*Math.pow(2,fi),colH=slotH*count;
+    var col=document.createElement('div');col.className='b-col';col.style.width=BM_W+'px';
+    var title=document.createElement('div');title.className='b-col-title';title.textContent=fase.n;title.style.height='30px';
+    col.appendChild(title);
+    var cw=document.createElement('div');cw.style.cssText='position:relative;height:'+colH+'px;width:'+BM_W+'px;';
+    matches.forEach(function(m,mi){
+      var pv=palpites.find(function(x){return x.matchId===m.id;})||null;
+      var div=document.createElement('div');div.style.cssText='position:absolute;width:'+BM_W+'px;';
+      var sc=slotH*mi+slotH/2;div.style.top=(sc-BM_H/2)+'px';
+      div.innerHTML=cardHTML(fase.k,m,pv,'mmv-in','gerarSimulaVivo()');cw.appendChild(div);
+    });
+    col.appendChild(cw);container.appendChild(col);
+    if(fi<FASES.length-1){
+      var nc=mmv[FASES[fi+1].k].length,nsh=baseSlot*Math.pow(2,fi+1),svgH=Math.max(colH,nsh*nc);
+      var conn=document.createElement('div');conn.className='b-conn';conn.style.cssText='width:'+CONN_W+'px;position:relative;';
+      var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('width',CONN_W);svg.setAttribute('height',svgH+30);svg.style.cssText='display:block;margin-top:30px;';
+      for(var ni=0;ni<nc;ni++){
+        var m1=ni*2,m2=ni*2+1,y1=slotH*m1+slotH/2,y2=slotH*m2+slotH/2;
+        [['M 0 '+y1+' H '+CONN_W/2],['M 0 '+y2+' H '+CONN_W/2],['M '+CONN_W/2+' '+y1+' V '+y2],['M '+CONN_W/2+' '+(y1+y2)/2+' H '+CONN_W]].forEach(function(d){
+          var path=document.createElementNS('http://www.w3.org/2000/svg','path');
+          path.setAttribute('d',d[0]);path.setAttribute('stroke','rgba(0,212,255,0.35)');path.setAttribute('stroke-width','1.2');path.setAttribute('fill','none');svg.appendChild(path);
+        });
+      }
+      conn.appendChild(svg);container.appendChild(conn);
+    }
+  });
+  gerarSimulaVivo();
+  parseEmojis(container);
+}
+
+function _gerarSimulaVivoImpl(){
+  propagarSlots('#bt-mmv',{},'mmv-in',true);
+}
+var gerarSimulaVivo=debounce(_gerarSimulaVivoImpl,300);
+
+function salvarMataMataVivo(){
+  var n=document.getElementById('select-participante').value;
+  if(!n){showToast('Selecione seu nome em "Minha Previsão" primeiro.','error');return;}
+  var btn=document.querySelector('#mmvivo-conteudo .btn-gold-save-big');
+  if(btn){btn.disabled=true;btn.classList.add('btn-loading');btn.textContent='⏳ SALVANDO...';}
+  var pal=[];
+  document.querySelectorAll('#bt-mmv .bm').forEach(function(c){
+    var i1=c.querySelector('.mmv-in[data-s="1"]'),i2=c.querySelector('.mmv-in[data-s="2"]');
+    if(i1&&i2&&i1.value!==''&&i2.value!==''){
+      var btnPen=c.querySelector('.pen-btn');
+      pal.push({matchId:parseInt(c.dataset.id),gols1:parseInt(i1.value),gols2:parseInt(i2.value),penaltis:btnPen?(parseInt(btnPen.dataset.pen)||0):0});
+    }
+  });
+  apiPost({action:'savePalpiteMataMataVivo',nome:n,palpites:pal}).then(function(resp){
+    _reabilitarBotoesSalvar();
+    if(btn){btn.disabled=false;btn.classList.remove('btn-loading');btn.textContent='💾 SALVAR MATA-MATA AO VIVO';}
+    if(!resp||!resp.ok){onErroRPC(resp?resp.error:'Erro');return;}
+    showToast('Palpites do Mata-Mata Ao Vivo salvos!','success');
+    loadData();
+  }).catch(onErroRPC);
 }
 
 function renderRegras(){
