@@ -138,6 +138,9 @@
     .btn-trash:hover { background: var(--red); color: var(--text); transform: translateY(-1px); }
 
     .bracket-outer { width: 100%; overflow-x: auto; overflow-y: auto; background: var(--navy); border: 1px solid var(--border); border-radius: var(--radius-lg); cursor: grab; padding: 28px 24px 36px; box-shadow: var(--shadow-2); position: relative; }
+    .tp-wrap { display: flex; justify-content: center; margin-top: 24px; padding: 24px 16px; background: var(--navy); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-2); flex-direction: column; align-items: center; }
+    .tp-wrap .tp-title { font-family: var(--font-display); font-size: 18px; font-weight: 900; color: var(--gold); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; }
+    .tp-wrap .bm { position: relative; }
     .bracket-outer:active { cursor: grabbing; }
     .bracket-tree { position: relative; display: inline-flex; gap: 0; align-items: flex-start; min-width: max-content; }
     .b-col { display: flex; flex-direction: column; width: 210px; flex-shrink: 0; }
@@ -351,6 +354,7 @@
       <div id="tab-jogos-mm" class="fase-tab">
         <p class="mobile-bracket-hint">👆 Arraste para os lados</p>
         <div class="bracket-outer" id="bw-pal"><div class="bracket-tree" id="bt-pal"></div></div>
+        <div id="tp-pal" class="tp-wrap"></div>
       </div>
       <h3 style="color:var(--gold);font-family:var(--font-display);font-size:24px;margin-top:40px;font-weight:900;letter-spacing:0.06em">🥇 PALPITES ESPECIAIS</h3>
       <div class="extras-grid" id="extras-container"></div>
@@ -368,6 +372,7 @@
       <div id="mmvivo-bracket-area" style="display:none;">
         <p class="mobile-bracket-hint">👆 Arraste para os lados</p>
         <div class="bracket-outer" id="bw-mmv"><div class="bracket-tree" id="bt-mmv"></div></div>
+        <div id="tp-mmv" class="tp-wrap"></div>
         <button class="btn-gold-save-big" style="margin-top:30px;" onclick="salvarMataMataVivo()">💾 SALVAR MATA-MATA AO VIVO</button>
       </div>
     </div>
@@ -383,6 +388,7 @@
     <div id="tab-res-mm" class="fase-tab">
       <p class="mobile-bracket-hint">👆 Arraste para os lados</p>
       <div class="bracket-outer" id="bw-ofi"><div class="bracket-tree" id="bt-ofi"></div></div>
+      <div id="tp-ofi" class="tp-wrap"></div>
     </div>
     <div class="card" style="margin-top:30px;margin-bottom:80px;">
       <h3 style="color:var(--gold);font-family:var(--font-display);font-size:24px;font-weight:900;letter-spacing:0.06em;margin-bottom:15px">✔️ VALIDAÇÃO DE EXTRAS</h3>
@@ -470,7 +476,8 @@ const MM = {
   R16:[{id:17,p1:'W2',p2:'W5'},{id:18,p1:'W1',p2:'W3'},{id:19,p1:'W4',p2:'W6'},{id:20,p1:'W7',p2:'W8'},{id:21,p1:'W11',p2:'W12'},{id:22,p1:'W9',p2:'W10'},{id:23,p1:'W14',p2:'W16'},{id:24,p1:'W13',p2:'W15'}],
   QF:[{id:25,p1:'W17',p2:'W18'},{id:26,p1:'W19',p2:'W20'},{id:27,p1:'W21',p2:'W22'},{id:28,p1:'W23',p2:'W24'}],
   SF:[{id:29,p1:'W25',p2:'W26'},{id:30,p1:'W27',p2:'W28'}],
-  FI:[{id:31,p1:'W29',p2:'W30'}]
+  FI:[{id:31,p1:'W29',p2:'W30'}],
+  TP:[{id:32,p1:'L29',p2:'L30'}]
 };
 const FASES=[{k:'R32',n:'16-AVOS'},{k:'R16',n:'OITAVAS'},{k:'QF',n:'QUARTAS'},{k:'SF',n:'SEMIS'},{k:'FI',n:'FINAL'}];
 const BM_W=210,BM_H=105,CONN_W=60;
@@ -589,6 +596,12 @@ function renderBracket(containerId,tipo){
       conn.appendChild(svg);container.appendChild(conn);
     }
   });
+  var tpId=isPal?'tp-pal':'tp-ofi',tpContainer=document.getElementById(tpId);
+  if(tpContainer){
+    var tpMatch=MM.TP[0],tpPv=palpites.find(function(x){return x.grupo==='TP'&&x.jogoIdx===tpMatch.id;})||null;
+    tpContainer.innerHTML='<div class="tp-title">🥉 Disputa de 3º Lugar</div>'+cardHTML('TP',tpMatch,tpPv,ic,oi);
+    parseEmojis(tpContainer);
+  }
   if(isPal)gerarSimula();else atualizarOfi();
   parseEmojis(container);
 }
@@ -1162,13 +1175,13 @@ function _gerarSimulaImpl(){
   var slots={};
   Object.keys(stats).forEach(function(l){slots['1'+l]=stats[l][0].j>0?stats[l][0].nome:'1º '+l;slots['2'+l]=stats[l][1].j>0?stats[l][1].nome:'2º '+l;});
   Object.assign(slots,atribuirTerceiros(terc));
-  propagarSlots('#bt-pal',slots,'mm-in',true);
+  propagarSlots('#bt-pal, #tp-pal',slots,'mm-in',true);
   var n=document.getElementById('select-participante').value;if(n)salvarRascunho(n);
   parseEmojis(document.getElementById('simula-container'));
 }
 var gerarSimula=debounce(_gerarSimulaImpl,300);
 
-function _atualizarOfiImpl(){propagarSlots('#bt-ofi',getSlotsClasficacao(),'ofi-in',false);document.getElementById('save-bar-resultados').classList.add('show');}
+function _atualizarOfiImpl(){propagarSlots('#bt-ofi, #tp-ofi',getSlotsClasficacao(),'ofi-in',false);document.getElementById('save-bar-resultados').classList.add('show');}
 var atualizarOfi=debounce(_atualizarOfiImpl,300);
 
 function getSlotsClasficacao(){
@@ -1218,7 +1231,7 @@ function propagarSlots(sel,slots,ic,isPal){
         if(btn){btn.disabled=false;applyPenSelection(c,parseInt(btn.dataset.pen)||0);var pv=parseInt(btn.dataset.pen)||0;venc=pv===1?n1:(pv===2?n2:null);}
       }
     }else{t1.classList.remove('winner');t2.classList.remove('winner');if(btn){btn.disabled=true;btn.dataset.pen='0';btn.textContent='Empate';btn.classList.remove('chosen');}}
-    if(venc)slots['W'+c.dataset.id]=venc;
+    if(venc){slots['W'+c.dataset.id]=venc;slots['L'+c.dataset.id]=(venc===n1?n2:n1);}
   });
   parseEmojis(document.querySelector(sel));
 }
@@ -1291,7 +1304,7 @@ function salvarTudoUsuario(){
   if(btn){btn.disabled=true;btn.classList.add('btn-loading');btn.textContent='⏳ SALVANDO...';}
   var pal=[],ext={};
   document.querySelectorAll('.p-in[data-s="1"]').forEach(function(i){var i2=document.querySelector('.p-in[data-l="'+i.dataset.l+'"][data-i="'+i.dataset.i+'"][data-s="2"]');if(i.value!=''&&i2.value!='')pal.push({grupo:i.dataset.l,jogoIdx:parseInt(i.dataset.i),gols1:parseInt(i.value),gols2:parseInt(i2.value)});});
-  document.querySelectorAll('#bt-pal .bm').forEach(function(c){var i1=c.querySelector('.mm-in[data-s="1"]'),i2=c.querySelector('.mm-in[data-s="2"]'),btn=c.querySelector('.pen-btn');if(i1.value!=''&&i2.value!='')pal.push({grupo:c.dataset.f,jogoIdx:parseInt(c.dataset.id),gols1:parseInt(i1.value),gols2:parseInt(i2.value),penaltis:parseInt(btn&&btn.dataset.pen||0)});});
+  document.querySelectorAll('#bt-pal .bm, #tp-pal .bm').forEach(function(c){var i1=c.querySelector('.mm-in[data-s="1"]'),i2=c.querySelector('.mm-in[data-s="2"]'),btn=c.querySelector('.pen-btn');if(i1.value!=''&&i2.value!='')pal.push({grupo:c.dataset.f,jogoIdx:parseInt(c.dataset.id),gols1:parseInt(i1.value),gols2:parseInt(i2.value),penaltis:parseInt(btn&&btn.dataset.pen||0)});});
   document.querySelectorAll('.ex-in').forEach(function(i){if(i.value.trim()!='')ext[i.dataset.k]=i.value.trim();});
   showToast('Salvando...','info');
   apiPost({action:'savePalpites',nome:n,palpites:pal,extras:ext}).then(function(resp){
@@ -1332,7 +1345,7 @@ function salvarAdminResultados(){
   if(btn){btn.disabled=true;btn.classList.add('btn-loading');btn.textContent='⏳ SALVANDO...';}
   var res=[],ext={};
   document.querySelectorAll('.a-in[data-s="1"]').forEach(function(i){var i2=document.querySelector('.a-in[data-l="'+i.dataset.l+'"][data-i="'+i.dataset.i+'"][data-s="2"]');if(i.value!=''&&i2.value!='')res.push({grupo:i.dataset.l,jogoIdx:parseInt(i.dataset.i),gols1:parseInt(i.value),gols2:parseInt(i2.value)});});
-  document.querySelectorAll('#bt-ofi .bm').forEach(function(c){var i1=c.querySelector('.ofi-in[data-s="1"]'),i2=c.querySelector('.ofi-in[data-s="2"]'),btn=c.querySelector('.pen-btn');if(i1.value!=''&&i2.value!='')res.push({grupo:c.dataset.f,jogoIdx:parseInt(c.dataset.id),gols1:parseInt(i1.value),gols2:parseInt(i2.value),penaltis:parseInt(btn&&btn.dataset.pen||0)});});
+  document.querySelectorAll('#bt-ofi .bm, #tp-ofi .bm').forEach(function(c){var i1=c.querySelector('.ofi-in[data-s="1"]'),i2=c.querySelector('.ofi-in[data-s="2"]'),btn=c.querySelector('.pen-btn');if(i1.value!=''&&i2.value!='')res.push({grupo:c.dataset.f,jogoIdx:parseInt(c.dataset.id),gols1:parseInt(i1.value),gols2:parseInt(i2.value),penaltis:parseInt(btn&&btn.dataset.pen||0)});});
   document.querySelectorAll('.chk-a-ex').forEach(function(c){if(!ext[c.dataset.n])ext[c.dataset.n]={};ext[c.dataset.n][c.dataset.k]=c.checked;});
   showToast('Oficializando...','info');
   apiPost({action:'saveResultados',resultados:res,extrasChecks:ext}).then(function(resp){
@@ -1455,12 +1468,18 @@ function renderBracketVivo(){
       conn.appendChild(svg);container.appendChild(conn);
     }
   });
+  var tpContainer=document.getElementById('tp-mmv');
+  if(tpContainer){
+    var tpMatch=MM.TP[0],tpPv=palpites.find(function(x){return x.matchId===tpMatch.id;})||null;
+    tpContainer.innerHTML='<div class="tp-title">🥉 Disputa de 3º Lugar</div>'+cardHTML('TP',tpMatch,tpPv,'mmv-in','gerarSimulaVivo()');
+    parseEmojis(tpContainer);
+  }
   gerarSimulaVivo();
   parseEmojis(container);
 }
 
 function _gerarSimulaVivoImpl(){
-  propagarSlots('#bt-mmv',{},'mmv-in',true);
+  propagarSlots('#bt-mmv, #tp-mmv',{},'mmv-in',true);
 }
 var gerarSimulaVivo=debounce(_gerarSimulaVivoImpl,300);
 
@@ -1470,7 +1489,7 @@ function salvarMataMataVivo(){
   var btn=document.querySelector('#mmvivo-conteudo .btn-gold-save-big');
   if(btn){btn.disabled=true;btn.classList.add('btn-loading');btn.textContent='⏳ SALVANDO...';}
   var pal=[];
-  document.querySelectorAll('#bt-mmv .bm').forEach(function(c){
+  document.querySelectorAll('#bt-mmv .bm, #tp-mmv .bm').forEach(function(c){
     var i1=c.querySelector('.mmv-in[data-s="1"]'),i2=c.querySelector('.mmv-in[data-s="2"]');
     if(i1&&i2&&i1.value!==''&&i2.value!==''){
       var btnPen=c.querySelector('.pen-btn');
