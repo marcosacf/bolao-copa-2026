@@ -1213,7 +1213,8 @@ function cyclePenalty(btn){
   else{atualizarOfi();}
 }
 function propagarSlots(sel,slots,ic,isPal){
-  document.querySelectorAll(sel+' .bm').forEach(function(c){
+  var cardSel=sel.split(',').map(function(s){return s.trim()+' .bm';}).join(',');
+  document.querySelectorAll(cardSel).forEach(function(c){
     var n1=slots[c.dataset.p1]||c.dataset.p1,n2=slots[c.dataset.p2]||c.dataset.p2;
     var t1=c.querySelector('.t1'),t2=c.querySelector('.t2');
     t1.querySelector('.flag-s').textContent=getFlag(n1);t1.querySelector('.name-s').textContent=n1;
@@ -1233,7 +1234,7 @@ function propagarSlots(sel,slots,ic,isPal){
     }else{t1.classList.remove('winner');t2.classList.remove('winner');if(btn){btn.disabled=true;btn.dataset.pen='0';btn.textContent='Empate';btn.classList.remove('chosen');}}
     if(venc){slots['W'+c.dataset.id]=venc;slots['L'+c.dataset.id]=(venc===n1?n2:n1);}
   });
-  parseEmojis(document.querySelector(sel));
+  sel.split(',').forEach(function(s){var el=document.querySelector(s.trim());if(el)parseEmojis(el);});
 }
 
 function renderRanking(){
