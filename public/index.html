@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>⚽ Bolão Premium Copa 2026</title>
   <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
@@ -317,7 +318,7 @@
   <datalist id="lista-selecoes"></datalist>
 
   <section class="section active" id="section-ranking">
-    <div class="section-title">🏆 <span>Ranking</span> Geral</div>
+    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;"><div>🏆 <span>Ranking</span> Geral</div><button class="btn-create" style="font-size:11px;padding:8px 14px;" onclick="exportarPalpites()">📥 Exportar Palpites</button></div>
     <div id="ranking-container"><div class="spinner"></div></div>
   </section>
 
@@ -415,6 +416,7 @@
     <div class="section-title">⚙️ <span>Motor</span> de Pontuação</div>
     <div id="regras-lista-container" class="card"></div>
     <button class="btn-gold-save-big" onclick="salvarAdminRegras()">💾 SALVAR REGRAS</button>
+    <div style="margin-top:20px;text-align:center;"><button class="btn-create" onclick="exportarPalpites()">📥 Exportar Palpites de Todos (XLSX)</button></div>
   </section>
 </main>
 
@@ -1235,6 +1237,87 @@ function propagarSlots(sel,slots,ic,isPal){
     if(venc){slots['W'+c.dataset.id]=venc;slots['L'+c.dataset.id]=(venc===n1?n2:n1);}
   });
   sel.split(',').forEach(function(s){var el=document.querySelector(s.trim());if(el)parseEmojis(el);});
+}
+
+function exportarPalpites(){
+  if(typeof XLSX==='undefined'){showToast('Biblioteca de exportação ainda carregando, tente em alguns segundos.','error');return;}
+  if(!STATE.participantes||!STATE.participantes.length){showToast('Nenhum participante cadastrado.','error');return;}
+  var wb=XLSX.utils.book_new();
+  var now=new Date(),agora=now.toLocaleString('pt-BR');
+  var dataFmt=now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
+
+  var indice=[['ÍNDICE — BOLÃO COPA 2026'],['Gerado em: '+agora],['Estado do torneio: '+(STATE.estadoTorneio==='ao_vivo'?'Mata-Mata Ao Vivo':'Previsão')],[],['Pos','Participante','Pts Previsão','Pts Ao Vivo','Total']];
+  (STATE.ranking||[]).forEach(function(r,i){indice.push([i+1,r.nome,r.ptsPrevisao||0,r.ptsAoVivo||0,r.pts||0]);});
+  var wsIdx=XLSX.utils.aoa_to_sheet(indice);
+  wsIdx['!cols']=[{wch:6},{wch:30},{wch:14},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,wsIdx,'ÍNDICE');
+
+  var faseNome={R32:'R32',R16:'R16',QF:'QF',SF:'SF',FI:'Final',TP:'3º Lugar'};
+  var faseDoJogo=function(id){if(id<=16)return'R32';if(id<=24)return'R16';if(id<=28)return'QF';if(id<=30)return'SF';if(id===31)return'FI';return'TP';};
+
+  STATE.participantes.forEach(function(nome){
+    var rows=[['=== PALPITES DE '+nome.toUpperCase()+' ==='],['Gerado em: '+agora],[]];
+    var rk=(STATE.ranking||[]).find(function(x){return x.nome===nome;})||{pts:0,ptsPrevisao:0,ptsAoVivo:0,detalhes:{extrato:[]},detalhesAoVivo:{extrato:[]}};
+    var palP=(STATE.palpites&&STATE.palpites[nome])||[];
+    var extP=(STATE.extrasPalpite&&STATE.extrasPalpite[nome])||{};
+    var palMMV=(STATE.palpitesMMVivo&&STATE.palpitesMMVivo[nome])||[];
+
+    rows.push(['--- FASE DE GRUPOS ---']);
+    rows.push(['Grupo','Jogo','Time 1','Placar 1','Placar 2','Time 2']);
+    Object.keys(STATE.grupos).forEach(function(l){
+      STATE.grupos[l].jogos.forEach(function(j,i){
+        var p=palP.find(function(x){return x.grupo===l&&x.jogoIdx===i;});
+        rows.push([l,i+1,j[0],p?p.gols1:'—',p?p.gols2:'—',j[1]]);
+      });
+    });
+    rows.push([]);
+
+    rows.push(['--- MATA-MATA (PREVISÃO) ---']);
+    rows.push(['Fase','Jogo','Time 1','Placar 1','Placar 2','Time 2','Pênaltis (vencedor)']);
+    ['R32','R16','QF','SF','FI','TP'].forEach(function(k){
+      (MM[k]||[]).forEach(function(m){
+        var p=palP.find(function(x){return x.grupo===k&&x.jogoIdx===m.id;});
+        var pen=p&&p.penaltis?(p.penaltis===1?'Time 1':p.penaltis===2?'Time 2':'—'):'—';
+        rows.push([faseNome[k],'M'+m.id,m.p1,p?p.gols1:'—',p?p.gols2:'—',m.p2,pen]);
+      });
+    });
+    rows.push([]);
+
+    if(STATE.estadoTorneio==='ao_vivo'&&palMMV.length){
+      rows.push(['--- MATA-MATA AO VIVO ---']);
+      rows.push(['Fase','Jogo','Placar 1','Placar 2','Pênaltis (vencedor)']);
+      palMMV.slice().sort(function(a,b){return a.matchId-b.matchId;}).forEach(function(p){
+        var pen=p.penaltis?(p.penaltis===1?'Time 1':p.penaltis===2?'Time 2':'—'):'—';
+        rows.push([faseNome[faseDoJogo(p.matchId)],'M'+p.matchId,p.gols1,p.gols2,pen]);
+      });
+      rows.push([]);
+    }
+
+    rows.push(['--- PALPITES EXTRAS ---']);
+    Object.keys(extP).forEach(function(k){rows.push([k+':',extP[k].palpite||'—',extP[k].pontuou?'(pontuou)':'']);});
+    rows.push([]);
+
+    rows.push(['--- PONTUAÇÃO ATUAL ---']);
+    rows.push(['Total:',rk.pts||0,'pts']);
+    rows.push(['Previsão:',rk.ptsPrevisao||0,'pts']);
+    rows.push(['Ao Vivo:',rk.ptsAoVivo||0,'pts']);
+    rows.push([]);
+    rows.push(['Detalhamento Previsão:']);
+    ((rk.detalhes&&rk.detalhes.extrato)||[]).forEach(function(e){rows.push([e.icone+' '+e.texto,'+'+e.pts+' pts']);});
+    if(rk.detalhesAoVivo&&rk.detalhesAoVivo.extrato&&rk.detalhesAoVivo.extrato.length){
+      rows.push([]);
+      rows.push(['Detalhamento Ao Vivo:']);
+      rk.detalhesAoVivo.extrato.forEach(function(e){rows.push([e.icone+' '+e.texto,'+'+e.pts+' pts']);});
+    }
+
+    var ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:18},{wch:8},{wch:22},{wch:10},{wch:10},{wch:22},{wch:18}];
+    var safeName=nome.replace(/[\\\/\?\*\[\]:]/g,'_').substring(0,31);
+    XLSX.utils.book_append_sheet(wb,ws,safeName);
+  });
+
+  XLSX.writeFile(wb,'palpites_bolao_copa2026_'+dataFmt+'.xlsx');
+  showToast('Exportação concluída!','success');
 }
 
 function renderRanking(){
