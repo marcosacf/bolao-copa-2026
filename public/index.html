@@ -1274,13 +1274,46 @@ function exportarPalpites(){
 
     rows.push(['--- MATA-MATA (PREVISÃO) ---']);
     rows.push(['Fase','Jogo','Time 1','Placar 1','Placar 2','Time 2','Pênaltis (vencedor)']);
-    ['R32','R16','QF','SF','FI','TP'].forEach(function(k){
-      (MM[k]||[]).forEach(function(m){
-        var p=palP.find(function(x){return x.grupo===k&&x.jogoIdx===m.id;});
-        var pen=p&&p.penaltis?(p.penaltis===1?'Time 1':p.penaltis===2?'Time 2':'—'):'—';
-        rows.push([faseNome[k],'M'+m.id,m.p1,p?p.gols1:'—',p?p.gols2:'—',m.p2,pen]);
+    // Simulate bracket from this participant's group palpites
+    (function(){
+      var gStats={},terc=[];
+      Object.keys(STATE.grupos).forEach(function(l){
+        var gS={};STATE.grupos[l].paises.forEach(function(p){gS[p]={nome:p,pts:0,sg:0,gp:0,j:0};});
+        var palGrp=palP.filter(function(x){return x.grupo===l;});
+        STATE.grupos[l].jogos.forEach(function(j,i){
+          var pal=palGrp.find(function(x){return x.jogoIdx===i;});
+          if(pal&&pal.gols1!==''&&pal.gols1!==undefined&&pal.gols2!==''&&pal.gols2!==undefined){
+            var v1=Number(pal.gols1),v2=Number(pal.gols2);
+            gS[j[0]].j++;gS[j[1]].j++;gS[j[0]].gp+=v1;gS[j[1]].gp+=v2;gS[j[0]].sg+=(v1-v2);gS[j[1]].sg+=(v2-v1);
+            if(v1>v2){gS[j[0]].pts+=3;}else if(v1<v2){gS[j[1]].pts+=3;}else{gS[j[0]].pts++;gS[j[1]].pts++;}
+          }
+        });
+        var sorted=Object.values(gS).sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;});
+        gStats[l]=sorted;
+        if(sorted[2])terc.push(Object.assign({grupo:l},sorted[2]));
       });
-    });
+      var slots={};
+      Object.keys(gStats).forEach(function(l){
+        slots['1'+l]=gStats[l][0]&&gStats[l][0].j>0?gStats[l][0].nome:'1º '+l;
+        slots['2'+l]=gStats[l][1]&&gStats[l][1].j>0?gStats[l][1].nome:'2º '+l;
+      });
+      Object.assign(slots,atribuirTerceiros(terc));
+      // Propagate bracket phases
+      ['R32','R16','QF','SF','FI','TP'].forEach(function(k){
+        (MM[k]||[]).forEach(function(m){
+          var n1=slots[m.p1]||m.p1,n2=slots[m.p2]||m.p2;
+          var p=palP.find(function(x){return x.grupo===k&&x.jogoIdx===m.id;});
+          var pen='—',venc=null;
+          if(p&&p.gols1!==''&&p.gols1!==undefined&&p.gols2!==''&&p.gols2!==undefined){
+            var g1=Number(p.gols1),g2=Number(p.gols2);
+            if(g1>g2){venc=n1;}else if(g2>g1){venc=n2;}else if(p.penaltis===1){venc=n1;pen='Time 1';}else if(p.penaltis===2){venc=n2;pen='Time 2';}
+          }
+          if(k!=='TP'){if(venc){slots['W'+m.id]=venc;slots['L'+m.id]=(venc===n1?n2:n1);}}
+          else{if(venc){slots['W'+m.id]=venc;slots['L'+m.id]=(venc===n1?n2:n1);}}
+          rows.push([faseNome[k],'M'+m.id,n1,p?p.gols1:'—',p?p.gols2:'—',n2,pen]);
+        });
+      });
+    })();
     rows.push([]);
 
     if(STATE.estadoTorneio==='ao_vivo'&&palMMV.length){
