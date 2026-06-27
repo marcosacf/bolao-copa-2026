@@ -235,6 +235,26 @@
 
     .prazo-aviso { position: fixed; bottom: 24px; left: 24px; z-index: 999; background: rgba(255,51,85,0.15); border: 1px solid rgba(255,51,85,0.5); border-left: 3px solid var(--red); border-radius: var(--radius); padding: 12px 18px; display: none; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--red); letter-spacing: 0.08em; text-transform: uppercase; max-width: 320px; }
     .prazo-aviso.show { display: flex; }
+    @media (max-width: 768px) {
+      .prazo-aviso { position: static; bottom: auto; left: auto; max-width: 100%; width: 100%; box-sizing: border-box; margin: 0 0 12px 0; box-shadow: none; border-radius: 8px; justify-content: center; text-align: center; }
+    }
+
+    .subnav-tab { background: var(--navy); color: var(--muted); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .subnav-tab:hover { color: var(--white); border-color: var(--gold); }
+    .subnav-tab.active { background: var(--gold); color: var(--navy-deep); border-color: var(--gold); }
+    .terceiros-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .terceiros-table th { background: var(--navy-deep); color: var(--gold); padding: 10px; text-align: left; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .terceiros-table td { padding: 10px; border-bottom: 1px solid var(--border); }
+    .terceiros-row.classificado { background: rgba(0,200,100,0.08); border-left: 3px solid #00c864; }
+    .terceiros-row.classificado .status-cell { color: #00c864; font-weight: 700; }
+    .terceiros-row.eliminado { background: rgba(255,255,255,0.02); opacity: 0.65; }
+    .terceiros-row.eliminado .status-cell { color: var(--muted); }
+    .terceiros-row.pendente { opacity: 0.4; }
+    .terceiros-divider td { border-top: 3px solid var(--red); padding: 0; height: 0; }
+    .terceiros-aviso { text-align: center; padding: 12px; margin-bottom: 14px; border-radius: 8px; font-size: 13px; }
+    .terceiros-aviso.parcial { background: rgba(255,180,0,0.1); border: 1px solid rgba(255,180,0,0.3); color: #ffb400; }
+    .terceiros-aviso.completo { background: rgba(0,200,100,0.1); border: 1px solid rgba(0,200,100,0.3); color: #00c864; }
+    .terceiros-aviso.aguardando { color: var(--muted); padding: 40px; }
 
     .prazo-admin { display: flex; align-items: center; gap: 12px; padding: 18px 4px; border-bottom: 1px solid var(--border); }
     .prazo-admin label { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
@@ -317,6 +337,8 @@
 <main class="main">
   <datalist id="lista-selecoes"></datalist>
 
+  <div class="prazo-aviso" id="prazo-aviso">Prazo de palpites encerrado</div>
+
   <section class="section active" id="section-ranking">
     <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;"><div>🏆 <span>Ranking</span> Geral</div><button class="btn-create" style="font-size:11px;padding:8px 14px;" onclick="exportarPalpites()">📥 Exportar Palpites</button></div>
     <div id="ranking-container"><div class="spinner"></div></div>
@@ -324,7 +346,12 @@
 
   <section class="section" id="section-oficiais">
     <div class="section-title">📊 <span>Situação</span> dos Grupos</div>
+    <div class="subnav-row" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+      <button class="subnav-tab active" data-sub="grupos" onclick="showSubtab('grupos')">📊 Grupos</button>
+      <button class="subnav-tab" data-sub="terceiros" onclick="showSubtab('terceiros')">🥉 Ranking de Terceiros</button>
+    </div>
     <div class="simula-grid" id="grupos-oficiais-container"></div>
+    <div id="terceiros-container" style="display:none;"></div>
   </section>
 
   <div class="mini-ranking" id="mini-ranking">
@@ -420,7 +447,6 @@
   </section>
 </main>
 
-<div class="prazo-aviso" id="prazo-aviso">Prazo de palpites encerrado</div>
 
 <div class="modal-overlay" id="modal-add">
   <div class="modal">
@@ -517,7 +543,7 @@ function loadData(){
     if(!d||!d.ok){onErroRPC(d?d.error:'Sem resposta');return;}
     STATE=d;
     var hs=document.getElementById('header-sub');if(hs&&d.nomeBolao)hs.textContent='EDIÇÃO 2026 · BOLÃO '+d.nomeBolao;
-    renderRanking();renderGruposOficiais();renderSelect();popularDatalist();
+    renderRanking();renderGruposOficiais();renderTerceiros();renderSelect();popularDatalist();
     renderAdminResultados();renderBracket('bt-ofi','ofi');renderRegras();renderMataMataVivo();renderEstadoBanner();
     var sd=document.getElementById('select-desemp'),cur=sd.value;
     sd.innerHTML='<option value="">— Selecione um participante —</option>'+(d.participantes||[]).map(function(p){return '<option value="'+p+'"'+(p===cur?' selected':'')+'>'+p+'</option>';}).join('');
@@ -1372,6 +1398,35 @@ function renderGruposOficiais(){
     var sorted=Object.keys(s).map(function(k){return Object.assign({nome:k},s[k]);}).sort(function(a,b){return b.pts-a.pts||b.sg-a.sg||b.gp-a.gp;});
     return '<div class="simula-card"><div class="simula-head">GRUPO '+l+'</div><table class="simula-table"><thead><tr><th style="text-align:left">Equipe</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead><tbody>'+sorted.map(function(x,i){return '<tr class="'+(i<2?'top'+(i+1):'')+'"><td class="team-cell">'+getFlag(x.nome)+' '+x.nome+'</td><td style="color:var(--gold);font-weight:bold">'+x.pts+'</td><td>'+x.j+'</td><td>'+x.v+'</td><td>'+x.e+'</td><td>'+x.d+'</td><td>'+x.sg+'</td></tr>';}).join('')+'</tbody></table></div>';
   }).join('');
+  parseEmojis(el);
+}
+
+function showSubtab(sub){
+  document.querySelectorAll('.subnav-tab').forEach(function(b){b.classList.toggle('active', b.dataset.sub === sub);});
+  document.getElementById('grupos-oficiais-container').style.display = sub === 'grupos' ? '' : 'none';
+  document.getElementById('terceiros-container').style.display = sub === 'terceiros' ? '' : 'none';
+}
+
+function renderTerceiros(){
+  var el = document.getElementById('terceiros-container');
+  if(!el) return;
+  var rt = STATE.rankingTerceiros;
+  if(!rt || rt.gruposCompletos === 0){
+    el.innerHTML = '<div class="terceiros-aviso aguardando">⏳ Aguardando o término dos grupos para calcular o ranking dos terceiros</div>';
+    parseEmojis(el);
+    return;
+  }
+  var aviso = '';
+  if(rt.gruposCompletos < rt.totalGrupos) aviso = '<div class="terceiros-aviso parcial">⚠️ Faltam ' + (rt.totalGrupos - rt.gruposCompletos) + ' grupos para definir todos os classificados — ranking parcial</div>';
+  else aviso = '<div class="terceiros-aviso completo">✅ Ranking final dos 8 terceiros classificados</div>';
+  var html = aviso + '<table class="terceiros-table"><thead><tr><th>Pos</th><th>Grupo</th><th>Time</th><th>Pts</th><th>SG</th><th>GP</th><th>Status</th></tr></thead><tbody>';
+  rt.entries.forEach(function(e, i){
+    if(i === 8) html += '<tr class="terceiros-divider"><td colspan="7"></td></tr>';
+    var statusTxt = e.status === 'classificado' ? '✅ Classificado' : e.status === 'eliminado' ? '❌ Eliminado' : '⏳ Pendente';
+    html += '<tr class="terceiros-row ' + e.status + '"><td>' + (i+1) + 'º</td><td>' + e.grupo + '</td><td>' + (e.pendente ? '—' : (getFlag(e.nome) + ' ' + e.nome)) + '</td><td>' + (e.pendente ? '—' : e.pts) + '</td><td>' + (e.pendente ? '—' : (e.sg > 0 ? '+' + e.sg : e.sg)) + '</td><td>' + (e.pendente ? '—' : e.gp) + '</td><td class="status-cell">' + statusTxt + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
   parseEmojis(el);
 }
 

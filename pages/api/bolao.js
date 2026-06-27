@@ -1,5 +1,5 @@
 import { readRows, appendRow, appendRows, deleteRows, updateCells } from '../../lib/sheets';
-import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, REGRAS_AOVIVO_PADRAO, calcularPontos, calcularPontosAoVivo } from '../../lib/data';
+import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, REGRAS_AOVIVO_PADRAO, calcularPontos, calcularPontosAoVivo, calcularRankingTerceiros } from '../../lib/data';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -91,7 +91,8 @@ async function getData() {
   });
   ranking.sort((a, b) => b.pts - a.pts);
 
-  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, chaveamentoOficial, palpitesMMVivo: palMMVivoFiltrado, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
+  const rankingTerceiros = calcularRankingTerceiros(ofi);
+  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, chaveamentoOficial, palpitesMMVivo: palMMVivoFiltrado, rankingTerceiros, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
 }
 
 // ── PARTICIPANTES ─────────────────────────────────────────
