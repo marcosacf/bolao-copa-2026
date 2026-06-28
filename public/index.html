@@ -1755,6 +1755,8 @@ function loadMataMataVivo(){
     var bd=(STATE.bandeiras||{});
     var of=(STATE.oficiais||{})[faseDoJogoMMJS(t.id)+'-'+t.id];
     var buf=MMV_BUFFER[t.id]||{};
+    var jogoIniciou=false;
+    if(dj.data&&dj.hora){jogoIniciou=new Date()>=new Date(dj.data+'T'+dj.hora+':00-03:00');}
     if(of){
       // Card readonly com resultado oficial e palpite do usuário
       var acertou=(buf.gols1===of.gols1&&buf.gols2===of.gols2);
@@ -1771,14 +1773,16 @@ function loadMataMataVivo(){
       html+='</div>';
     } else {
       var eq=(buf.gols1!==undefined&&buf.gols2!==undefined&&buf.gols1===buf.gols2);
-      html+='<div class="mmv-card" data-id="'+t.id+'">';
+      var locked=jogoIniciou;
+      var dis=locked?' disabled':'';
+      html+='<div class="mmv-card'+(locked?' readonly':'')+'" data-id="'+t.id+'">';
       html+=horaTag;
       html+='<div class="mmv-team"><span class="flag">'+(bd[p1]||'')+'</span><span class="name">'+getAbrev(p1)+'</span></div>';
-      html+='<div class="mmv-scores"><input class="mmv-inp mmv-in" data-id="'+t.id+'" data-s="1" type="number" min="0" max="99" value="'+(buf.gols1!==undefined?buf.gols1:'')+'" oninput="onMmvInput('+t.id+')"><span class="mmv-x">×</span><input class="mmv-inp mmv-in" data-id="'+t.id+'" data-s="2" type="number" min="0" max="99" value="'+(buf.gols2!==undefined?buf.gols2:'')+'" oninput="onMmvInput('+t.id+')"></div>';
+      html+='<div class="mmv-scores"><input class="mmv-inp mmv-in" data-id="'+t.id+'" data-s="1" type="number" min="0" max="99" value="'+(buf.gols1!==undefined?buf.gols1:'')+'"'+dis+' oninput="onMmvInput('+t.id+')"><span class="mmv-x">×</span><input class="mmv-inp mmv-in" data-id="'+t.id+'" data-s="2" type="number" min="0" max="99" value="'+(buf.gols2!==undefined?buf.gols2:'')+'"'+dis+' oninput="onMmvInput('+t.id+')"></div>';
       html+='<div class="mmv-team right"><span class="name">'+getAbrev(p2)+'</span><span class="flag">'+(bd[p2]||'')+'</span></div>';
-      html+='<div class="mmv-card-footer"><span class="mmv-fase-tag">'+t.fase+' · #'+t.id+'</span>';
+      html+='<div class="mmv-card-footer"><span class="mmv-fase-tag">'+t.fase+' · #'+t.id+(locked?' · 🔒 jogo iniciado':'')+'</span>';
       if(eq){
-        html+='<div class="mmv-penaltis"><span>Pênaltis:</span><button class="mmv-pen-opt'+(buf.penaltis===1?' active':'')+'" onclick="onMmvPen('+t.id+',1)">'+getAbrev(p1)+'</button><button class="mmv-pen-opt'+(buf.penaltis===2?' active':'')+'" onclick="onMmvPen('+t.id+',2)">'+getAbrev(p2)+'</button></div>';
+        html+='<div class="mmv-penaltis"><span>Pênaltis:</span><button class="mmv-pen-opt'+(buf.penaltis===1?' active':'')+'"'+dis+' onclick="onMmvPen('+t.id+',1)">'+getAbrev(p1)+'</button><button class="mmv-pen-opt'+(buf.penaltis===2?' active':'')+'"'+dis+' onclick="onMmvPen('+t.id+',2)">'+getAbrev(p2)+'</button></div>';
       } else {
         html+='<span></span>';
       }
@@ -1820,6 +1824,8 @@ function salvarPalpitesMmv(){
   Object.keys(MMV_BUFFER).forEach(function(k){
     if(k==='__nome')return;
     var b=MMV_BUFFER[k];
+    var dj=dataJogoMMJS(parseInt(k))||{};
+    if(dj.data&&dj.hora&&new Date()>=new Date(dj.data+'T'+dj.hora+':00-03:00'))return;
     if(b&&Number.isInteger(b.gols1)&&Number.isInteger(b.gols2)){
       pal.push({matchId:parseInt(k),gols1:b.gols1,gols2:b.gols2,penaltis:b.penaltis||0});
     }
