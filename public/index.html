@@ -1879,7 +1879,7 @@ function verificarPrazo(){
       aviso.innerHTML='🔒 Previsão encerrada — palpites travados desde '+dataStr;
       aviso.classList.add('show');
     }
-    document.querySelectorAll('.p-in,.mm-in,.ex-in,.bm-inp').forEach(function(inp){inp.disabled=true;inp.style.opacity='0.4';inp.style.cursor='not-allowed';});
+    document.querySelectorAll('#palpites-master .p-in, #palpites-master .mm-in, #palpites-master .ex-in, #palpites-master .bm-inp').forEach(function(inp){inp.disabled=true;inp.style.opacity='0.4';inp.style.cursor='not-allowed';});
     var btn=document.querySelector('#palpites-master .btn-gold-save-big');if(btn){btn.disabled=true;btn.classList.add('btn-loading');}
   }else{if(aviso)aviso.classList.remove('show');}
   return enc;
