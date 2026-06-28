@@ -340,9 +340,11 @@
     .mmv-fase-tag { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; font-weight: 700; }
     .mmv-card-footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
     .mmv-card-time { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 4px; }
-    .mmv-penaltis { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 10px; color: var(--muted2); letter-spacing: 0.12em; text-transform: uppercase; }
-    .mmv-pen-opt { padding: 5px 10px; background: var(--navy); border: 1px solid var(--border); border-radius: 4px; color: var(--muted2); font-family: var(--font-mono); font-size: 11px; cursor: pointer; font-weight: 700; }
-    .mmv-pen-opt.active { background: rgba(0,212,255,0.14); border-color: var(--gold); color: var(--gold); }
+    .mmv-penaltis { display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 12px; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 800; background: rgba(255,200,0,0.12); border: 1px solid rgba(255,200,0,0.5); border-radius: 8px; padding: 8px 12px; animation: penPulse 1.6s ease-in-out infinite; }
+    @keyframes penPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,200,0,0.35); } 50% { box-shadow: 0 0 0 6px rgba(255,200,0,0); } }
+    .mmv-pen-opt { padding: 6px 12px; background: var(--navy); border: 1px solid var(--gold); border-radius: 6px; color: var(--white); font-family: var(--font-mono); font-size: 12px; cursor: pointer; font-weight: 800; transition: all .15s; }
+    .mmv-pen-opt:hover { background: rgba(255,200,0,0.2); }
+    .mmv-pen-opt.active { background: var(--gold); border-color: var(--gold); color: var(--navy-deep); }
     .mmv-pen-opt:disabled { cursor: not-allowed; opacity: 0.6; }
     .mmv-resultado-oficial { font-family: var(--font-mono); font-size: 10px; color: var(--muted2); letter-spacing: 0.08em; }
     .mmv-resultado-oficial.acertou { color: #5ad08a; }
