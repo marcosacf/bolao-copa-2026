@@ -487,6 +487,7 @@
     <div id="regras-lista-container" class="card"></div>
     <button class="btn-gold-save-big" onclick="salvarAdminRegras()">💾 SALVAR REGRAS</button>
     <div style="margin-top:20px;text-align:center;"><button class="btn-create" onclick="exportarPalpites()">📥 Exportar Palpites de Todos (XLSX)</button></div>
+    <div style="margin-top:14px;text-align:center;"><button class="btn-green" style="background:var(--red);" onclick="limparPalpitesPrevisaoMM()">🔄 Limpar palpites mata-mata da Previsão (após mudança de pareamento R16)</button></div>
   </section>
 </main>
 
@@ -605,6 +606,7 @@ function showSection(id,btn){
   document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById('section-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
+  if(id==='mmvivo')renderMataMataVivo();
 }
 
 function subTab(t){
@@ -1843,6 +1845,14 @@ function renderRegras(){
   });
   document.getElementById('regras-lista-container').innerHTML=h;
   parseEmojis(document.getElementById('regras-lista-container'));
+}
+
+function limparPalpitesPrevisaoMM(){
+  if(!confirm('Tem certeza? Isso vai apagar TODOS os palpites de R32, R16, QF, SF, Final e 3º Lugar da fase de previsão E todos os palpites do Mata-Mata Ao Vivo de TODOS os participantes. Esta ação não pode ser desfeita.'))return;
+  apiPost({action:'clearMataMataPalpitesPrevisao'}).then(function(r){
+    if(r&&r.ok){showToast('Removidas '+(r.removidas||0)+' linhas.','success');loadData();}
+    else onErroRPC(r?r.error:'Erro');
+  }).catch(onErroRPC);
 }
 
 function salvarPrazo(){
