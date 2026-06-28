@@ -339,6 +339,7 @@
     .mmv-x { color: var(--muted); font-weight: 700; font-size: 12px; }
     .mmv-fase-tag { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; font-weight: 700; }
     .mmv-card-footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+    .mmv-card-time { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 4px; }
     .mmv-penaltis { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 10px; color: var(--muted2); letter-spacing: 0.12em; text-transform: uppercase; }
     .mmv-pen-opt { padding: 5px 10px; background: var(--navy); border: 1px solid var(--border); border-radius: 4px; color: var(--muted2); font-family: var(--font-mono); font-size: 11px; cursor: pointer; font-weight: 700; }
     .mmv-pen-opt.active { background: rgba(0,212,255,0.14); border-color: var(--gold); color: var(--gold); }
@@ -1746,7 +1747,8 @@ function loadMataMataVivo(){
   var html='';var lastData='';
   visiveis.forEach(function(t){
     var dj=dataJogoMMJS(t.id)||{};
-    if(dj.data!==lastData){html+='<div class="mmv-data-header">'+formatDataHeader(dj.data)+(dj.hora?' · '+dj.hora:'')+'</div>';lastData=dj.data;}
+    if(dj.data!==lastData){html+='<div class="mmv-data-header">'+formatDataHeader(dj.data)+'</div>';lastData=dj.data;}
+    var horaTag=dj.hora?'<div class="mmv-card-time">'+dj.hora+'</div>':'';
     var p1=slots['p1_'+t.id]||'?',p2=slots['p2_'+t.id]||'?';
     var bd=(STATE.bandeiras||{});
     var of=(STATE.oficiais||{})[faseDoJogoMMJS(t.id)+'-'+t.id];
@@ -1759,6 +1761,7 @@ function loadMataMataVivo(){
         penLine=' · Pênaltis: <b>'+(of.penaltis===1?p1:p2)+'</b>';
       }
       html+='<div class="mmv-card readonly'+(acertou?' match':'')+'" data-id="'+t.id+'">';
+      html+=horaTag;
       html+='<div class="mmv-team"><span class="flag">'+(bd[p1]||'')+'</span><span class="name">'+getAbrev(p1)+'</span></div>';
       html+='<div class="mmv-scores"><input class="mmv-inp" disabled value="'+(buf.gols1!==undefined?buf.gols1:'-')+'"><span class="mmv-x">×</span><input class="mmv-inp" disabled value="'+(buf.gols2!==undefined?buf.gols2:'-')+'"></div>';
       html+='<div class="mmv-team right"><span class="name">'+getAbrev(p2)+'</span><span class="flag">'+(bd[p2]||'')+'</span></div>';
@@ -1767,6 +1770,7 @@ function loadMataMataVivo(){
     } else {
       var eq=(buf.gols1!==undefined&&buf.gols2!==undefined&&buf.gols1===buf.gols2);
       html+='<div class="mmv-card" data-id="'+t.id+'">';
+      html+=horaTag;
       html+='<div class="mmv-team"><span class="flag">'+(bd[p1]||'')+'</span><span class="name">'+getAbrev(p1)+'</span></div>';
       html+='<div class="mmv-scores"><input class="mmv-inp mmv-in" data-id="'+t.id+'" data-s="1" type="number" min="0" max="99" value="'+(buf.gols1!==undefined?buf.gols1:'')+'" oninput="onMmvInput('+t.id+')"><span class="mmv-x">×</span><input class="mmv-inp mmv-in" data-id="'+t.id+'" data-s="2" type="number" min="0" max="99" value="'+(buf.gols2!==undefined?buf.gols2:'')+'" oninput="onMmvInput('+t.id+')"></div>';
       html+='<div class="mmv-team right"><span class="name">'+getAbrev(p2)+'</span><span class="flag">'+(bd[p2]||'')+'</span></div>';
