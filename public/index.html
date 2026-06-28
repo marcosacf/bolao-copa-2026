@@ -1946,13 +1946,14 @@ function salvarAdminRegras(){
 function verExtrato(n){
   var p=STATE.ranking.find(function(x){return x.nome==n;});if(!p)return;
   document.getElementById('ext-titulo').innerText=n;
-  document.getElementById('ext-subtitle').innerText='Total: '+p.pts+' pts';
-  if(!p.detalhes.extrato||!p.detalhes.extrato.length){document.getElementById('ext-conteudo').innerHTML='<p style="text-align:center;color:var(--muted)">Sem pontos.</p>';}
-  else{
-    var grouped={};
-    p.detalhes.extrato.forEach(function(e){var gn=e.grupo==='ZZZ'?'Palpites Especiais':(e.grupo.length===1?'Grupo '+e.grupo:'Fase Final ('+e.grupo+')');if(!grouped[gn])grouped[gn]={items:[],total:0};grouped[gn].items.push(e);grouped[gn].total+=e.pts;});
-    document.getElementById('ext-conteudo').innerHTML=Object.keys(grouped).map(function(gn){var gd=grouped[gn];return '<div class="extrato-group"><div class="extrato-head" onclick="this.nextElementSibling.classList.toggle(\'open\')"><span>📁 '+gn+'</span><span>+'+gd.total+' pts ▾</span></div><div class="extrato-body">'+gd.items.map(function(e){return '<div class="ext-row"><span>'+e.icone+' '+e.texto+'</span><span class="ext-pts">+'+e.pts+'</span></div>';}).join('')+'</div></div>';}).join('');
-  }
+  document.getElementById('ext-subtitle').innerText='Total: '+p.pts+' pts  ('+(p.ptsPrevisao||0)+' prev + '+(p.ptsAoVivo||0)+' vivo)';
+  var ePrev=(p.detalhes&&p.detalhes.extrato)||[];
+  var eVivo=(p.detalhesAoVivo&&p.detalhesAoVivo.extrato)||[];
+  if(!ePrev.length&&!eVivo.length){document.getElementById('ext-conteudo').innerHTML='<p style="text-align:center;color:var(--muted)">Sem pontos.</p>';openModal('extrato');return;}
+  var grouped={};
+  ePrev.forEach(function(e){var gn=e.grupo==='ZZZ'?'Palpites Especiais (Previsão)':(e.grupo.length===1?'Grupo '+e.grupo+' (Previsão)':'Mata-Mata Previsão ('+e.grupo+')');if(!grouped[gn])grouped[gn]={items:[],total:0};grouped[gn].items.push(e);grouped[gn].total+=e.pts;});
+  eVivo.forEach(function(e){var gn='Mata-Mata Ao Vivo';if(!grouped[gn])grouped[gn]={items:[],total:0};grouped[gn].items.push(e);grouped[gn].total+=e.pts;});
+  document.getElementById('ext-conteudo').innerHTML=Object.keys(grouped).map(function(gn){var gd=grouped[gn];return '<div class="extrato-group"><div class="extrato-head" onclick="this.nextElementSibling.classList.toggle(\'open\')"><span>📁 '+gn+'</span><span>+'+gd.total+' pts ▾</span></div><div class="extrato-body">'+gd.items.map(function(e){return '<div class="ext-row"><span>'+e.icone+' '+e.texto+'</span><span class="ext-pts">+'+e.pts+'</span></div>';}).join('')+'</div></div>';}).join('');
   openModal('extrato');parseEmojis(document.getElementById('modal-extrato'));
 }
 
