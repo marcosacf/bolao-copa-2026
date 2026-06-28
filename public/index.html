@@ -320,6 +320,44 @@
       .modal { padding: 18px; }
       .b-col { width: 160px; }
     }
+    /* ── Mata-Mata Ao Vivo (Dacopa-style) ── */
+    .select-padrao { width: 100%; padding: 12px 14px; background: var(--navy); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font-ui); font-size: 14px; font-weight: 600; outline: none; cursor: pointer; }
+    .mmv-filtro { flex: 1; padding: 10px 14px; background: var(--navy); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--muted2); font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .mmv-filtro:hover { color: var(--text); border-color: var(--border-strong); }
+    .mmv-filtro.active { background: rgba(0,212,255,0.10); border-color: var(--gold); color: var(--gold); }
+    .mmv-filtro .count { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 18px; padding: 0 6px; background: rgba(0,212,255,0.18); border-radius: 9px; font-size: 10px; color: var(--gold); }
+    .mmv-data-header { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; color: var(--muted2); text-transform: uppercase; margin: 22px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); font-weight: 700; }
+    .mmv-card { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; padding: 14px 16px; background: var(--navy2); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 10px; transition: border-color .15s; }
+    .mmv-card:hover { border-color: var(--border-strong); }
+    .mmv-card.readonly { opacity: 0.92; }
+    .mmv-card.match { border-color: rgba(60,200,120,0.55); background: rgba(60,200,120,0.06); }
+    .mmv-team { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--text); min-width: 0; }
+    .mmv-team.right { justify-content: flex-end; text-align: right; }
+    .mmv-team .flag { font-size: 20px; line-height: 1; flex-shrink: 0; }
+    .mmv-team .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mmv-scores { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .mmv-inp { width: 46px; height: 46px; background: var(--navy); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--text); text-align: center; font-family: var(--font-mono); font-size: 18px; font-weight: 800; outline: none; }
+    .mmv-inp:focus { border-color: var(--gold); }
+    .mmv-inp:disabled { color: var(--muted2); cursor: not-allowed; opacity: 0.7; }
+    .mmv-x { color: var(--muted); font-weight: 700; font-size: 12px; }
+    .mmv-fase-tag { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; font-weight: 700; }
+    .mmv-card-footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+    .mmv-penaltis { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 10px; color: var(--muted2); letter-spacing: 0.12em; text-transform: uppercase; }
+    .mmv-pen-opt { padding: 5px 10px; background: var(--navy); border: 1px solid var(--border); border-radius: 4px; color: var(--muted2); font-family: var(--font-mono); font-size: 11px; cursor: pointer; font-weight: 700; }
+    .mmv-pen-opt.active { background: rgba(0,212,255,0.14); border-color: var(--gold); color: var(--gold); }
+    .mmv-pen-opt:disabled { cursor: not-allowed; opacity: 0.6; }
+    .mmv-resultado-oficial { font-family: var(--font-mono); font-size: 10px; color: var(--muted2); letter-spacing: 0.08em; }
+    .mmv-resultado-oficial.acertou { color: #5ad08a; }
+    .mmv-resultado-oficial b { color: var(--text); }
+    .mmv-empty { text-align: center; padding: 36px 18px; color: var(--muted); font-style: italic; }
+    .save-bar { position: sticky; bottom: 12px; margin-top: 18px; padding: 12px 16px; background: var(--navy2); border: 1px solid var(--gold); border-radius: var(--radius-sm); text-align: center; box-shadow: 0 8px 26px rgba(0,0,0,.45); z-index: 5; }
+    @media (max-width: 640px) {
+      .mmv-card { grid-template-columns: 1fr auto 1fr; gap: 8px; padding: 12px 10px; }
+      .mmv-team { font-size: 12px; gap: 6px; }
+      .mmv-team .flag { font-size: 16px; }
+      .mmv-inp { width: 40px; height: 40px; font-size: 16px; }
+      .mmv-card-footer { flex-direction: column; align-items: stretch; gap: 8px; }
+    }
   </style>
 </head>
 <body>
@@ -392,16 +430,21 @@
 
   <section class="section" id="section-mmvivo">
     <div class="section-title">🔥 <span>Mata-Mata</span> Ao Vivo</div>
-    <div id="mmvivo-bloqueado" style="background:rgba(255,200,0,.12);border:1px solid var(--gold);border-radius:10px;padding:30px 18px;margin-bottom:18px;color:var(--gold);font-weight:700;text-align:center;">🔒 Liberado após o encerramento da fase de grupos pelo admin</div>
-    <div id="mmvivo-conteudo" style="display:none;">
-      <div class="selection-row" style="margin-bottom:20px;">
-        <select id="select-mmv" class="select-styled" onchange="onSelectMMV()"><option value="">— Selecione seu nome —</option></select>
+    <div id="mmv-locked-msg" style="display:none;text-align:center;padding:40px;color:var(--muted);">
+      🔒 A aba "Mata-Mata Ao Vivo" será liberada quando o admin encerrar a fase de previsão.
+    </div>
+    <div id="mmv-content" style="display:none;">
+      <div class="mmv-participant-row" style="margin-bottom:18px;">
+        <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:6px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;">Participante:</label>
+        <select id="mmv-select-participante" class="select-padrao" onchange="loadMataMataVivo()"></select>
       </div>
-      <div id="mmvivo-bracket-area" style="display:none;">
-        <p class="mobile-bracket-hint">👆 Arraste para os lados</p>
-        <div class="bracket-outer" id="bw-mmv"><div class="bracket-tree" id="bt-mmv"></div></div>
-        <div id="tp-mmv" class="tp-wrap"></div>
-        <button class="btn-gold-save-big" style="margin-top:30px;" onclick="salvarMataMataVivo()">💾 SALVAR MATA-MATA AO VIVO</button>
+      <div class="mmv-filtros" style="display:flex;gap:8px;margin-bottom:18px;">
+        <button class="mmv-filtro active" data-f="agenda" onclick="setMmvFiltro('agenda')">Agenda <span class="count" id="mmv-count-agenda">0</span></button>
+        <button class="mmv-filtro" data-f="anteriores" onclick="setMmvFiltro('anteriores')">Anteriores <span class="count" id="mmv-count-anteriores">0</span></button>
+      </div>
+      <div id="mmv-lista"></div>
+      <div id="mmv-save-bar" class="save-bar" style="display:none;">
+        <button class="btn-create" onclick="salvarPalpitesMmv()">💾 Salvar Palpites Ao Vivo</button>
       </div>
     </div>
   </section>
@@ -542,6 +585,7 @@ function loadData(){
   apiGet().then(function(d){
     if(!d||!d.ok){onErroRPC(d?d.error:'Sem resposta');return;}
     STATE=d;
+    window.DATAS_JOGOS=d.datasJogos||{};
     var hs=document.getElementById('header-sub');if(hs&&d.nomeBolao)hs.textContent='EDIÇÃO 2026 · BOLÃO '+d.nomeBolao;
     renderRanking();renderGruposOficiais();renderTerceiros();renderSelect();popularDatalist();
     renderAdminResultados();renderBracket('bt-ofi','ofi');renderRegras();renderMataMataVivo();renderEstadoBanner();
@@ -1578,101 +1622,208 @@ function renderEstadoBanner(){
   }
 }
 
+// ── Mata-Mata Ao Vivo (Dacopa-style) ──────────────────────
+var MMV_ABREV={'Estados Unidos':'EUA','Coreia do Sul':'COR','África do Sul':'AFS','República Tcheca':'TCH','Costa do Marfim':'CIV','Arábia Saudita':'ARA','Nova Zelândia':'NZL','RD Congo':'COD','Cabo Verde':'CPV'};
+var MMV_FILTRO='agenda';
+var MMV_BUFFER={}; // { matchId: {gols1, gols2, penaltis} } palpites pendentes do participante atual
+function getAbrev(n){if(!n)return '?';return MMV_ABREV[n]||n;}
+function setMmvFiltro(f){MMV_FILTRO=f;document.querySelectorAll('.mmv-filtro').forEach(function(b){b.classList.toggle('active',b.dataset.f===f);});renderMataMataVivo();}
+
+function fifaMatchCodeJS(id){if(id<=30)return 'M'+(72+id);if(id===31)return 'M104';return 'M103';}
+function dataJogoMMJS(id){return (window.DATAS_JOGOS||{})[fifaMatchCodeJS(id)]||null;}
+function faseDoJogoMMJS(id){if(id<=16)return 'R32';if(id<=24)return 'R16';if(id<=28)return 'QF';if(id<=30)return 'SF';if(id===31)return 'FI';return 'TP';}
+
+// Constrói slots W{id}/L{id} a partir de chaveamento oficial (R32) + oficiais (M73..M104)
+function buildSlotsAoVivo(){
+  var slots={};
+  var ch=STATE.chaveamentoOficial||{};
+  // R32: chaveamento oficial define p1/p2
+  MM.R32.forEach(function(m){
+    var raw=(ch[String(m.id)]||'').split('|');
+    slots['p1_'+m.id]=raw[0]||null;
+    slots['p2_'+m.id]=raw[1]||null;
+  });
+  // R16+ derivam de W{prev} usando oficiais
+  function vencedorOficial(matchId){
+    var of=(STATE.oficiais||{})[faseDoJogoMMJS(matchId)+'-'+matchId];
+    if(!of)return null;
+    var p1=slots['p1_'+matchId],p2=slots['p2_'+matchId];
+    if(!p1||!p2)return null;
+    if(of.gols1>of.gols2)return {w:p1,l:p2};
+    if(of.gols2>of.gols1)return {w:p2,l:p1};
+    if(of.penaltis===1)return {w:p1,l:p2};
+    if(of.penaltis===2)return {w:p2,l:p1};
+    return null;
+  }
+  function resolveTag(tag){
+    if(!tag)return null;
+    if(tag.charAt(0)==='W'){var v=vencedorOficial(parseInt(tag.slice(1)));return v?v.w:null;}
+    if(tag.charAt(0)==='L'){var v2=vencedorOficial(parseInt(tag.slice(1)));return v2?v2.l:null;}
+    return tag; // já é nome ou Q*/1A/2B etc.
+  }
+  ['R16','QF','SF','FI','TP'].forEach(function(fk){
+    MM[fk].forEach(function(m){
+      slots['p1_'+m.id]=resolveTag(m.p1);
+      slots['p2_'+m.id]=resolveTag(m.p2);
+    });
+  });
+  return slots;
+}
+
+function isJogoDisponivel(matchId,slots){
+  // R32 sempre disponível quando estado=ao_vivo
+  if(matchId<=16)return !!(slots['p1_'+matchId]&&slots['p2_'+matchId]);
+  // Demais: precisam dos dois feeders resolvidos (W{id})
+  var def=null;
+  ['R16','QF','SF','FI','TP'].forEach(function(fk){var f=MM[fk].find(function(x){return x.id===matchId;});if(f)def=f;});
+  if(!def)return false;
+  return !!(slots['p1_'+matchId]&&slots['p2_'+matchId]);
+}
+
+function formatDataHeader(iso){
+  if(!iso)return 'Sem data';
+  var p=iso.split('-');
+  var d=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+  var dias=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  var meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return dias[d.getDay()]+', '+p[2]+' '+meses[d.getMonth()];
+}
+
 function renderMataMataVivo(){
-  var bloqueado=document.getElementById('mmvivo-bloqueado'),conteudo=document.getElementById('mmvivo-conteudo');
+  var locked=document.getElementById('mmv-locked-msg'),content=document.getElementById('mmv-content');
+  if(!locked||!content)return;
   if(STATE.estadoTorneio!=='ao_vivo'){
-    bloqueado.style.display='block';conteudo.style.display='none';
+    locked.style.display='block';content.style.display='none';
     return;
   }
-  bloqueado.style.display='none';conteudo.style.display='block';
-  var sel=document.getElementById('select-mmv'),cur=sel.value;
-  sel.innerHTML='<option value="">— Selecione seu nome —</option>'+(STATE.participantes||[]).map(function(p){return '<option value="'+p+'"'+(p===cur?' selected':'')+'>'+p+'</option>';}).join('');
-  if(sel.value)renderBracketVivo();else document.getElementById('mmvivo-bracket-area').style.display='none';
+  locked.style.display='none';content.style.display='block';
+  var sel=document.getElementById('mmv-select-participante'),cur=sel.value;
+  sel.innerHTML='<option value="">— Selecione —</option>'+(STATE.participantes||[]).map(function(p){return '<option value="'+p+'"'+(p===cur?' selected':'')+'>'+p+'</option>';}).join('');
+  if(!sel.value){document.getElementById('mmv-lista').innerHTML='<div class="mmv-empty">Selecione um participante para começar.</div>';document.getElementById('mmv-save-bar').style.display='none';document.getElementById('mmv-count-agenda').textContent='0';document.getElementById('mmv-count-anteriores').textContent='0';return;}
+  loadMataMataVivo();
 }
 
-function onSelectMMV(){
-  var n=document.getElementById('select-mmv').value;
-  if(!n){document.getElementById('mmvivo-bracket-area').style.display='none';return;}
-  document.getElementById('mmvivo-bracket-area').style.display='block';
-  renderBracketVivo();
-}
+function loadMataMataVivo(){
+  var nome=document.getElementById('mmv-select-participante').value;
+  var lista=document.getElementById('mmv-lista');
+  if(!nome){lista.innerHTML='<div class="mmv-empty">Selecione um participante para começar.</div>';document.getElementById('mmv-save-bar').style.display='none';return;}
 
-function getMMVivoStruct(){
-  var mmv={R32:[],R16:MM.R16,QF:MM.QF,SF:MM.SF,FI:MM.FI};
-  MM.R32.forEach(function(m){
-    var ch=(STATE.chaveamentoOficial||{})[String(m.id)]||'';
-    var times=ch.split('|');
-    mmv.R32.push({id:m.id,p1:times[0]||'?',p2:times[1]||'?'});
-  });
-  return mmv;
-}
-
-function renderBracketVivo(){
-  var n=document.getElementById('select-mmv').value;
-  var mmv=getMMVivoStruct();
-  var palpites=(STATE.palpitesMMVivo&&STATE.palpitesMMVivo[n])||[];
-  var container=document.getElementById('bt-mmv');container.innerHTML='';
-  FASES.forEach(function(fase,fi){
-    var matches=mmv[fase.k],count=matches.length,GAP=35,baseSlot=BM_H+GAP,slotH=baseSlot*Math.pow(2,fi),colH=slotH*count;
-    var col=document.createElement('div');col.className='b-col';col.style.width=BM_W+'px';
-    var title=document.createElement('div');title.className='b-col-title';title.textContent=fase.n;title.style.height='30px';
-    col.appendChild(title);
-    var cw=document.createElement('div');cw.style.cssText='position:relative;height:'+colH+'px;width:'+BM_W+'px;';
-    matches.forEach(function(m,mi){
-      var pv=palpites.find(function(x){return x.matchId===m.id;})||null;
-      var div=document.createElement('div');div.style.cssText='position:absolute;width:'+BM_W+'px;';
-      var sc=slotH*mi+slotH/2;div.style.top=(sc-BM_H/2)+'px';
-      div.innerHTML=cardHTML(fase.k,m,pv,'mmv-in','gerarSimulaVivo()');cw.appendChild(div);
-    });
-    col.appendChild(cw);container.appendChild(col);
-    if(fi<FASES.length-1){
-      var nc=mmv[FASES[fi+1].k].length,nsh=baseSlot*Math.pow(2,fi+1),svgH=Math.max(colH,nsh*nc);
-      var conn=document.createElement('div');conn.className='b-conn';conn.style.cssText='width:'+CONN_W+'px;position:relative;';
-      var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-      svg.setAttribute('width',CONN_W);svg.setAttribute('height',svgH+30);svg.style.cssText='display:block;margin-top:30px;';
-      for(var ni=0;ni<nc;ni++){
-        var m1=ni*2,m2=ni*2+1,y1=slotH*m1+slotH/2,y2=slotH*m2+slotH/2;
-        [['M 0 '+y1+' H '+CONN_W/2],['M 0 '+y2+' H '+CONN_W/2],['M '+CONN_W/2+' '+y1+' V '+y2],['M '+CONN_W/2+' '+(y1+y2)/2+' H '+CONN_W]].forEach(function(d){
-          var path=document.createElementNS('http://www.w3.org/2000/svg','path');
-          path.setAttribute('d',d[0]);path.setAttribute('stroke','rgba(0,212,255,0.35)');path.setAttribute('stroke-width','1.2');path.setAttribute('fill','none');svg.appendChild(path);
-        });
-      }
-      conn.appendChild(svg);container.appendChild(conn);
-    }
-  });
-  var tpContainer=document.getElementById('tp-mmv');
-  if(tpContainer){
-    var tpMatch=MM.TP[0],tpPv=palpites.find(function(x){return x.matchId===tpMatch.id;})||null;
-    tpContainer.innerHTML='<div class="tp-title">🥉 Disputa de 3º Lugar</div>'+cardHTML('TP',tpMatch,tpPv,'mmv-in','gerarSimulaVivo()');
-    parseEmojis(tpContainer);
+  // Carrega palpites salvos para o buffer (uma vez por troca de participante)
+  if(MMV_BUFFER.__nome!==nome){
+    MMV_BUFFER={__nome:nome};
+    var saved=(STATE.palpitesMMVivo&&STATE.palpitesMMVivo[nome])||[];
+    saved.forEach(function(p){MMV_BUFFER[p.matchId]={gols1:p.gols1,gols2:p.gols2,penaltis:p.penaltis||0};});
   }
-  gerarSimulaVivo();
-  parseEmojis(container);
-}
 
-function _gerarSimulaVivoImpl(){
-  propagarSlots('#bt-mmv, #tp-mmv',{},'mmv-in',true);
-}
-var gerarSimulaVivo=debounce(_gerarSimulaVivoImpl,300);
+  var slots=buildSlotsAoVivo();
+  var todos=[];
+  ['R32','R16','QF','SF','FI','TP'].forEach(function(fk){
+    MM[fk].forEach(function(m){todos.push({id:m.id,fase:fk});});
+  });
 
-function salvarMataMataVivo(){
-  var n=document.getElementById('select-mmv').value;
-  if(!n){showToast('Selecione seu nome.','error');return;}
-  var btn=document.querySelector('#mmvivo-conteudo .btn-gold-save-big');
-  if(btn){btn.disabled=true;btn.classList.add('btn-loading');btn.textContent='⏳ SALVANDO...';}
-  var pal=[];
-  document.querySelectorAll('#bt-mmv .bm, #tp-mmv .bm').forEach(function(c){
-    var i1=c.querySelector('.mmv-in[data-s="1"]'),i2=c.querySelector('.mmv-in[data-s="2"]');
-    if(i1&&i2&&i1.value!==''&&i2.value!==''){
-      var btnPen=c.querySelector('.pen-btn');
-      pal.push({matchId:parseInt(c.dataset.id),gols1:parseInt(i1.value),gols2:parseInt(i2.value),penaltis:btnPen?(parseInt(btnPen.dataset.pen)||0):0});
+  // Separa: anteriores = jogo já tem resultado oficial; agenda = disponível e sem resultado
+  var anteriores=[],agenda=[];
+  todos.forEach(function(t){
+    var of=(STATE.oficiais||{})[faseDoJogoMMJS(t.id)+'-'+t.id];
+    if(of){anteriores.push(t);return;}
+    if(isJogoDisponivel(t.id,slots))agenda.push(t);
+  });
+
+  document.getElementById('mmv-count-agenda').textContent=agenda.length;
+  document.getElementById('mmv-count-anteriores').textContent=anteriores.length;
+
+  var visiveis=(MMV_FILTRO==='agenda')?agenda:anteriores;
+  if(!visiveis.length){lista.innerHTML='<div class="mmv-empty">'+(MMV_FILTRO==='agenda'?'Nenhum jogo disponível agora. Volte após resultados oficiais para liberar próximas fases.':'Nenhum jogo concluído ainda.')+'</div>';document.getElementById('mmv-save-bar').style.display=(MMV_FILTRO==='agenda'?'none':'none');return;}
+
+  // Agrupa por data
+  visiveis.sort(function(a,b){
+    var da=(dataJogoMMJS(a.id)||{}).data||'9999-99-99',db=(dataJogoMMJS(b.id)||{}).data||'9999-99-99';
+    if(da!==db)return da<db?-1:1;
+    var ha=(dataJogoMMJS(a.id)||{}).hora||'',hb=(dataJogoMMJS(b.id)||{}).hora||'';
+    if(ha!==hb)return ha<hb?-1:1;
+    return a.id-b.id;
+  });
+
+  var html='';var lastData='';
+  visiveis.forEach(function(t){
+    var dj=dataJogoMMJS(t.id)||{};
+    if(dj.data!==lastData){html+='<div class="mmv-data-header">'+formatDataHeader(dj.data)+(dj.hora?' · '+dj.hora:'')+'</div>';lastData=dj.data;}
+    var p1=slots['p1_'+t.id]||'?',p2=slots['p2_'+t.id]||'?';
+    var bd=(STATE.bandeiras||{});
+    var of=(STATE.oficiais||{})[faseDoJogoMMJS(t.id)+'-'+t.id];
+    var buf=MMV_BUFFER[t.id]||{};
+    if(of){
+      // Card readonly com resultado oficial e palpite do usuário
+      var acertou=(buf.gols1===of.gols1&&buf.gols2===of.gols2);
+      var penLine='';
+      if(of.gols1===of.gols2&&(of.penaltis===1||of.penaltis===2)){
+        penLine=' · Pênaltis: <b>'+(of.penaltis===1?p1:p2)+'</b>';
+      }
+      html+='<div class="mmv-card readonly'+(acertou?' match':'')+'" data-id="'+t.id+'">';
+      html+='<div class="mmv-team"><span class="flag">'+(bd[p1]||'')+'</span><span class="name">'+getAbrev(p1)+'</span></div>';
+      html+='<div class="mmv-scores"><input class="mmv-inp" disabled value="'+(buf.gols1!==undefined?buf.gols1:'-')+'"><span class="mmv-x">×</span><input class="mmv-inp" disabled value="'+(buf.gols2!==undefined?buf.gols2:'-')+'"></div>';
+      html+='<div class="mmv-team right"><span class="name">'+getAbrev(p2)+'</span><span class="flag">'+(bd[p2]||'')+'</span></div>';
+      html+='<div class="mmv-card-footer"><span class="mmv-fase-tag">'+t.fase+' · #'+t.id+'</span><span class="mmv-resultado-oficial'+(acertou?' acertou':'')+'">Oficial: <b>'+of.gols1+' × '+of.gols2+'</b>'+penLine+(acertou?' · 🎯 placar exato':'')+'</span></div>';
+      html+='</div>';
+    } else {
+      var eq=(buf.gols1!==undefined&&buf.gols2!==undefined&&buf.gols1===buf.gols2);
+      html+='<div class="mmv-card" data-id="'+t.id+'">';
+      html+='<div class="mmv-team"><span class="flag">'+(bd[p1]||'')+'</span><span class="name">'+getAbrev(p1)+'</span></div>';
+      html+='<div class="mmv-scores"><input class="mmv-inp mmv-in" data-id="'+t.id+'" data-s="1" type="number" min="0" max="99" value="'+(buf.gols1!==undefined?buf.gols1:'')+'" oninput="onMmvInput('+t.id+')"><span class="mmv-x">×</span><input class="mmv-inp mmv-in" data-id="'+t.id+'" data-s="2" type="number" min="0" max="99" value="'+(buf.gols2!==undefined?buf.gols2:'')+'" oninput="onMmvInput('+t.id+')"></div>';
+      html+='<div class="mmv-team right"><span class="name">'+getAbrev(p2)+'</span><span class="flag">'+(bd[p2]||'')+'</span></div>';
+      html+='<div class="mmv-card-footer"><span class="mmv-fase-tag">'+t.fase+' · #'+t.id+'</span>';
+      if(eq){
+        html+='<div class="mmv-penaltis"><span>Pênaltis:</span><button class="mmv-pen-opt'+(buf.penaltis===1?' active':'')+'" onclick="onMmvPen('+t.id+',1)">'+getAbrev(p1)+'</button><button class="mmv-pen-opt'+(buf.penaltis===2?' active':'')+'" onclick="onMmvPen('+t.id+',2)">'+getAbrev(p2)+'</button></div>';
+      } else {
+        html+='<span></span>';
+      }
+      html+='</div></div>';
     }
   });
-  apiPost({action:'savePalpiteMataMataVivo',nome:n,palpites:pal}).then(function(resp){
-    _reabilitarBotoesSalvar();
-    if(btn){btn.disabled=false;btn.classList.remove('btn-loading');btn.textContent='💾 SALVAR MATA-MATA AO VIVO';}
+  lista.innerHTML=html;
+  document.getElementById('mmv-save-bar').style.display=(MMV_FILTRO==='agenda'?'block':'none');
+  parseEmojis(lista);
+}
+
+function onMmvInput(id){
+  var i1=document.querySelector('.mmv-in[data-id="'+id+'"][data-s="1"]');
+  var i2=document.querySelector('.mmv-in[data-id="'+id+'"][data-s="2"]');
+  if(!i1||!i2)return;
+  var v1=i1.value===''?undefined:parseInt(i1.value);
+  var v2=i2.value===''?undefined:parseInt(i2.value);
+  MMV_BUFFER[id]=MMV_BUFFER[id]||{};
+  MMV_BUFFER[id].gols1=v1;MMV_BUFFER[id].gols2=v2;
+  if(v1===undefined||v2===undefined||v1!==v2){MMV_BUFFER[id].penaltis=0;}
+  // Re-render apenas se mudou empate ↔ não empate
+  loadMataMataVivo();
+  // Restaura foco
+  var sel=document.querySelector('.mmv-in[data-id="'+id+'"][data-s="2"]');
+  if(sel&&document.activeElement!==sel&&i2.value!=='')sel.focus();
+}
+function onMmvPen(id,who){
+  MMV_BUFFER[id]=MMV_BUFFER[id]||{};
+  MMV_BUFFER[id].penaltis=(MMV_BUFFER[id].penaltis===who?0:who);
+  loadMataMataVivo();
+}
+
+function salvarPalpitesMmv(){
+  var nome=document.getElementById('mmv-select-participante').value;
+  if(!nome){showToast('Selecione seu nome.','error');return;}
+  var btn=document.querySelector('#mmv-save-bar .btn-create');
+  if(btn){btn.disabled=true;btn.textContent='⏳ SALVANDO...';}
+  var pal=[];
+  Object.keys(MMV_BUFFER).forEach(function(k){
+    if(k==='__nome')return;
+    var b=MMV_BUFFER[k];
+    if(b&&Number.isInteger(b.gols1)&&Number.isInteger(b.gols2)){
+      pal.push({matchId:parseInt(k),gols1:b.gols1,gols2:b.gols2,penaltis:b.penaltis||0});
+    }
+  });
+  apiPost({action:'savePalpitesMataMataVivo',nome:nome,palpites:pal}).then(function(resp){
+    if(btn){btn.disabled=false;btn.textContent='💾 Salvar Palpites Ao Vivo';}
     if(!resp||!resp.ok){onErroRPC(resp?resp.error:'Erro');return;}
-    showToast('Palpites do Mata-Mata Ao Vivo salvos!','success');
+    showToast('Palpites Ao Vivo salvos!','success');
+    MMV_BUFFER={};
     loadData();
   }).catch(onErroRPC);
 }

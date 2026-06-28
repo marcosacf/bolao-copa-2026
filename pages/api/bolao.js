@@ -1,5 +1,5 @@
 import { readRows, appendRow, appendRows, deleteRows, updateCells } from '../../lib/sheets';
-import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, REGRAS_AOVIVO_PADRAO, calcularPontos, calcularPontosAoVivo, calcularRankingTerceiros } from '../../lib/data';
+import { GRUPOS, BANDEIRAS, REGRAS_PADRAO, REGRAS_AOVIVO_PADRAO, DATAS_JOGOS, calcularPontos, calcularPontosAoVivo, calcularRankingTerceiros } from '../../lib/data';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     }
     if (req.method === 'POST') {
       const { action, ...body } = req.body;
-      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, saveRegrasAoVivo, savePrazo, setEstadoTorneio, saveChaveamentoOficial, savePalpiteMataMataVivo };
+      const actions = { addParticipant, removeParticipant, savePalpites, saveResultados, saveRegras, saveRegrasAoVivo, savePrazo, setEstadoTorneio, saveChaveamentoOficial, savePalpiteMataMataVivo, savePalpitesMataMataVivo, clearMataMataPalpitesPrevisao };
       if (!actions[action]) return res.status(400).json({ ok: false, error: 'Ação inválida: ' + action });
       const result = await actions[action](body);
       return res.status(200).json(result);
@@ -92,7 +92,7 @@ async function getData() {
   ranking.sort((a, b) => b.pts - a.pts);
 
   const rankingTerceiros = calcularRankingTerceiros(ofi);
-  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, chaveamentoOficial, palpitesMMVivo: palMMVivoFiltrado, rankingTerceiros, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
+  return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, chaveamentoOficial, palpitesMMVivo: palMMVivoFiltrado, rankingTerceiros, datasJogos: DATAS_JOGOS, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
 }
 
 // ── PARTICIPANTES ─────────────────────────────────────────
@@ -283,6 +283,28 @@ async function savePalpiteMataMataVivo({ nome, palpites }) {
   const newRows = (palpites || []).map(p => ['palpite_mm_vivo', p.matchId, '', p.gols1, p.gols2, n, p.penaltis || 0, '']);
   await appendRows(newRows);
   return { ok: true };
+}
+
+// Alias plural — substitui todos os palpites_mm_vivo do participante
+async function savePalpitesMataMataVivo(body) {
+  return savePalpiteMataMataVivo(body);
+}
+
+// Limpa palpites de mata-mata da fase de previsão (grupos R32..TP em `palpite`)
+// e zera todos os palpite_mm_vivo. Disparado manualmente pelo admin ao encerrar
+// a fase de previsão e abrir o Mata-Mata Ao Vivo.
+async function clearMataMataPalpitesPrevisao() {
+  const rows = await readRows();
+  const fases = new Set(['R32', 'R16', 'QF', 'SF', 'FI', 'TP']);
+  const toDelete = [];
+  for (let i = 1; i < rows.length; i++) {
+    const tipo = rows[i][0];
+    const grupo = rows[i][1];
+    if (tipo === 'palpite' && fases.has(grupo)) toDelete.push(i);
+    else if (tipo === 'palpite_mm_vivo') toDelete.push(i);
+  }
+  if (toDelete.length) await deleteRows(toDelete);
+  return { ok: true, removidas: toDelete.length };
 }
 
 // ── CHAVEAMENTO OFICIAL (Mata-Mata Ao Vivo) ──────────────
