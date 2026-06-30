@@ -640,7 +640,15 @@ function cardHTML(fase,match,pv,ic,oi){
 
 function renderBracket(containerId,tipo){
   var isPal=tipo==='pal',ic=isPal?'mm-in':'ofi-in',oi=isPal?'gerarSimula()':'atualizarOfi()';
-  var palpites=isPal?(STATE.palpites[document.getElementById('select-participante').value]||[]):[];
+  var palpites;
+  if(isPal){palpites=STATE.palpites[document.getElementById('select-participante').value]||[];}
+  else{
+    palpites=Object.keys(STATE.oficiais||{}).map(function(k){
+      var parts=k.split('-'),grupo=parts[0],id=parseInt(parts[1]);
+      var of=STATE.oficiais[k];
+      return {grupo:grupo,jogoIdx:id,gols1:of.gols1,gols2:of.gols2,penaltis:of.penaltis||0};
+    });
+  }
   var container=document.getElementById(containerId);container.innerHTML='';
   FASES.forEach(function(fase,fi){
     var matches=MM[fase.k],count=matches.length,GAP=35,baseSlot=BM_H+GAP,slotH=baseSlot*Math.pow(2,fi),colH=slotH*count;

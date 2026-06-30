@@ -189,10 +189,17 @@ async function saveResultados({ resultados, extrasChecks }) {
   const rankingAtual = part.map(nm => { const c = calcularPontos(nm, pal[nm] || [], extP[nm] || {}, ofi, reg); return { nome: nm, pts: c.total }; });
   rankingAtual.sort((a, b) => b.pts - a.pts);
 
-  // Remove oficiais e ranking_anterior antigos
+  // Merge oficiais: só deleta as chaves que vêm no payload (evita perda de dados
+  // se o admin recarregar a página e clicar Salvar com inputs vazios).
+  const incomingKeys = new Set();
+  for (const r of (resultados || [])) {
+    const g1 = parseInt(r.gols1), g2 = parseInt(r.gols2);
+    if (isValidScore(g1) && isValidScore(g2)) incomingKeys.add(r.grupo + '-' + r.jogoIdx);
+  }
   const toDelete = [];
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === 'oficial' || rows[i][0] === 'ranking_anterior') toDelete.push(i);
+    if (rows[i][0] === 'ranking_anterior') toDelete.push(i);
+    else if (rows[i][0] === 'oficial' && incomingKeys.has(rows[i][1] + '-' + rows[i][2])) toDelete.push(i);
   }
   if (toDelete.length) await deleteRows(toDelete);
 
