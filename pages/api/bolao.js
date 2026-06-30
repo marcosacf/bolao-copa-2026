@@ -281,10 +281,14 @@ async function savePalpiteMataMataVivo({ nome, palpites }) {
       return { ok: false, error: 'Placar inválido' };
     }
   }
+  // Merge: só deleta as linhas do participante cujos matchIds vêm no payload.
+  // Preserva palpites de jogos não incluídos (ex: jogos já iniciados que o
+  // frontend filtra ao montar o payload).
+  const incomingIds = new Set((palpites || []).map(p => String(p.matchId)));
   const rows = await readRows();
   const toDelete = [];
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === 'palpite_mm_vivo' && normName(rows[i][5]) === n) toDelete.push(i);
+    if (rows[i][0] === 'palpite_mm_vivo' && normName(rows[i][5]) === n && incomingIds.has(String(rows[i][1]))) toDelete.push(i);
   }
   if (toDelete.length) await deleteRows(toDelete);
   const newRows = (palpites || []).map(p => ['palpite_mm_vivo', p.matchId, '', p.gols1, p.gols2, n, p.penaltis || 0, '']);
