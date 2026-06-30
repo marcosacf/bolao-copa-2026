@@ -1647,11 +1647,14 @@ function faseDoJogoMMJS(id){if(id<=16)return 'R32';if(id<=24)return 'R16';if(id<
 function buildSlotsAoVivo(){
   var slots={};
   var ch=STATE.chaveamentoOficial||{};
-  // R32: chaveamento oficial define p1/p2
+  // Fallback: resolve R32 via classificação dos grupos quando chaveamento está vazio
+  var liveSlots=(typeof getSlotsClasficacao==='function')?getSlotsClasficacao():{};
   MM.R32.forEach(function(m){
     var raw=(ch[String(m.id)]||'').split('|');
-    slots['p1_'+m.id]=raw[0]||null;
-    slots['p2_'+m.id]=raw[1]||null;
+    var p1Saved=raw[0]&&raw[0].length?raw[0]:null;
+    var p2Saved=raw[1]&&raw[1].length?raw[1]:null;
+    slots['p1_'+m.id]=p1Saved||liveSlots[m.p1]||null;
+    slots['p2_'+m.id]=p2Saved||liveSlots[m.p2]||null;
   });
   // R16+ derivam de W{prev} usando oficiais
   function vencedorOficial(matchId){
