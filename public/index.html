@@ -1865,7 +1865,9 @@ function renderRegras(){
 }
 
 function limparPalpitesPrevisaoMM(){
-  if(!confirm('Tem certeza? Isso vai apagar TODOS os palpites de R32, R16, QF, SF, Final e 3º Lugar da fase de previsão E todos os palpites do Mata-Mata Ao Vivo de TODOS os participantes. Esta ação não pode ser desfeita.'))return;
+  if(!confirm('⚠️ ATENÇÃO: Isso vai apagar TODOS os palpites de R32, R16, QF, SF, Final e 3º Lugar da fase de previsão E TODOS os palpites do Mata-Mata Ao Vivo de TODOS os participantes. Esta ação NÃO pode ser desfeita.\n\nClique OK para prosseguir.'))return;
+  var confirmText=prompt('Para confirmar, digite exatamente: APAGAR TUDO');
+  if(confirmText!=='APAGAR TUDO'){showToast('Cancelado.','info');return;}
   apiPost({action:'clearMataMataPalpitesPrevisao'}).then(function(r){
     if(r&&r.ok){showToast('Removidas '+(r.removidas||0)+' linhas.','success');loadData();}
     else onErroRPC(r?r.error:'Erro');
