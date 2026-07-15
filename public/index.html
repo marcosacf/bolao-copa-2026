@@ -547,10 +547,14 @@ const MM = {
   ],
   R16:[{id:17,p1:'W2',p2:'W5'},{id:18,p1:'W1',p2:'W3'},{id:19,p1:'W4',p2:'W6'},{id:20,p1:'W7',p2:'W8'},{id:21,p1:'W11',p2:'W12'},{id:22,p1:'W9',p2:'W10'},{id:23,p1:'W14',p2:'W16'},{id:24,p1:'W13',p2:'W15'}],
   QF:[{id:25,p1:'W17',p2:'W18'},{id:26,p1:'W19',p2:'W20'},{id:27,p1:'W21',p2:'W22'},{id:28,p1:'W23',p2:'W24'}],
-  SF:[{id:29,p1:'W25',p2:'W27'},{id:30,p1:'W26',p2:'W28'}],
+  SF:[{id:29,p1:'W25',p2:'W27'},{id:30,p1:'W26',p2:'W28'}], // real FIFA (usado no Mata-Mata Ao Vivo)
   FI:[{id:31,p1:'W29',p2:'W30'}],
   TP:[{id:32,p1:'L29',p2:'L30'}]
 };
+// Estrutura da Previsão: preserva o pareamento SF antigo (W25×W26 / W27×W28)
+// que estava lockado quando o bolão começou. Usada apenas para renderizar a
+// aba "Minha Previsão" — o Mata-Mata Ao Vivo segue o pareamento real (MM).
+const MM_PREVISAO=Object.assign({},MM,{SF:[{id:29,p1:'W25',p2:'W26'},{id:30,p1:'W27',p2:'W28'}]});
 const FASES=[{k:'R32',n:'16-AVOS'},{k:'R16',n:'OITAVAS'},{k:'QF',n:'QUARTAS'},{k:'SF',n:'SEMIS'},{k:'FI',n:'FINAL'}];
 const BM_W=210,BM_H=105,CONN_W=60;
 
@@ -650,8 +654,9 @@ function renderBracket(containerId,tipo){
     });
   }
   var container=document.getElementById(containerId);container.innerHTML='';
+  var BRACKET=isPal?MM_PREVISAO:MM;
   FASES.forEach(function(fase,fi){
-    var matches=MM[fase.k],count=matches.length,GAP=35,baseSlot=BM_H+GAP,slotH=baseSlot*Math.pow(2,fi),colH=slotH*count;
+    var matches=BRACKET[fase.k],count=matches.length,GAP=35,baseSlot=BM_H+GAP,slotH=baseSlot*Math.pow(2,fi),colH=slotH*count;
     var col=document.createElement('div');col.className='b-col';col.style.width=BM_W+'px';
     var title=document.createElement('div');title.className='b-col-title';title.textContent=fase.n;title.style.height='30px';
     col.appendChild(title);
@@ -664,7 +669,7 @@ function renderBracket(containerId,tipo){
     });
     col.appendChild(cw);container.appendChild(col);
     if(fi<FASES.length-1){
-      var nc=MM[FASES[fi+1].k].length,nsh=baseSlot*Math.pow(2,fi+1),svgH=Math.max(colH,nsh*nc);
+      var nc=BRACKET[FASES[fi+1].k].length,nsh=baseSlot*Math.pow(2,fi+1),svgH=Math.max(colH,nsh*nc);
       var conn=document.createElement('div');conn.className='b-conn';conn.style.cssText='width:'+CONN_W+'px;position:relative;';
       var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('width',CONN_W);svg.setAttribute('height',svgH+30);svg.style.cssText='display:block;margin-top:30px;';
@@ -680,7 +685,7 @@ function renderBracket(containerId,tipo){
   });
   var tpId=isPal?'tp-pal':'tp-ofi',tpContainer=document.getElementById(tpId);
   if(tpContainer){
-    var tpMatch=MM.TP[0],tpPv=palpites.find(function(x){return x.grupo==='TP'&&x.jogoIdx===tpMatch.id;})||null;
+    var tpMatch=BRACKET.TP[0],tpPv=palpites.find(function(x){return x.grupo==='TP'&&x.jogoIdx===tpMatch.id;})||null;
     tpContainer.innerHTML='<div class="tp-title">🥉 Disputa de 3º Lugar</div>'+cardHTML('TP',tpMatch,tpPv,ic,oi);
     parseEmojis(tpContainer);
   }
