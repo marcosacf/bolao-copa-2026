@@ -87,9 +87,10 @@ async function getData() {
   const ranking = part.map(nm => {
     const c = calcularPontos(nm, palFiltrado[nm] || [], extPFiltrado[nm] || {}, ofi, reg);
     const cv = calcularPontosAoVivo(palMMVivoFiltrado[nm] || [], ofi, regAoVivo);
-    return { nome: nm, pts: c.total + cv.total, ptsPrevisao: c.total, ptsAoVivo: cv.total, detalhes: c, detalhesAoVivo: cv };
+    const exatos = (c.extrato || []).filter(e => e.icone === '🎯').length + (cv.extrato || []).filter(e => e.icone === '🎯').length;
+    return { nome: nm, pts: c.total + cv.total, ptsPrevisao: c.total, ptsAoVivo: cv.total, exatos, detalhes: c, detalhesAoVivo: cv };
   });
-  ranking.sort((a, b) => b.pts - a.pts);
+  ranking.sort((a, b) => b.pts - a.pts || b.exatos - a.exatos || a.nome.localeCompare(b.nome));
 
   const rankingTerceiros = calcularRankingTerceiros(ofi);
   return { ok: true, participantes: part, palpites: palFiltrado, extrasPalpite: extPFiltrado, oficiais: ofi, regras: reg, regrasAoVivo: regAoVivo, ranking, grupos: GRUPOS, bandeiras: BANDEIRAS, prazo, rankingAnterior, estadoTorneio, chaveamentoOficial, palpitesMMVivo: palMMVivoFiltrado, rankingTerceiros, datasJogos: DATAS_JOGOS, nomeBolao: process.env.BOLAO_NOME || 'STUPENDO' };
@@ -186,8 +187,8 @@ async function saveResultados({ resultados, extrasChecks }) {
     else if (t === 'oficial') { ofi[g + '-' + ji] = { gols1: parseInt(g1), gols2: parseInt(g2), penaltis: parseInt(ex) || 0 }; }
     else if (t === 'regra') { reg[g] = parseInt(ji); }
   }
-  const rankingAtual = part.map(nm => { const c = calcularPontos(nm, pal[nm] || [], extP[nm] || {}, ofi, reg); return { nome: nm, pts: c.total }; });
-  rankingAtual.sort((a, b) => b.pts - a.pts);
+  const rankingAtual = part.map(nm => { const c = calcularPontos(nm, pal[nm] || [], extP[nm] || {}, ofi, reg); const exatos = (c.extrato || []).filter(e => e.icone === '🎯').length; return { nome: nm, pts: c.total, exatos }; });
+  rankingAtual.sort((a, b) => b.pts - a.pts || b.exatos - a.exatos || a.nome.localeCompare(b.nome));
 
   // Merge oficiais: só deleta as chaves que vêm no payload (evita perda de dados
   // se o admin recarregar a página e clicar Salvar com inputs vazios).

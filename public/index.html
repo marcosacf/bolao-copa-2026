@@ -1444,7 +1444,10 @@ function renderRanking(){
   cont.innerHTML=STATE.ranking.map(function(p,i){
     var pa=STATE.rankingAnterior?STATE.rankingAnterior[p.nome]:null,th='';
     if(pa!=null&&pa!=undefined){var pos=i+1;if(pa>pos)th='<div class="rank-trend up">▲ +'+(pa-pos)+'</div>';else if(pa<pos)th='<div class="rank-trend down">▼ '+(pa-pos)+'</div>';else th='<div class="rank-trend same">— mesmo</div>';}
-    var sub=(p.ptsAoVivo)?'<div class="rank-pts-sub" style="font-size:10px;color:var(--muted);">'+p.pts+' pts ('+p.ptsPrevisao+' prev + '+p.ptsAoVivo+' vivo)</div>':'';
+    var subParts=[];
+    if(p.ptsAoVivo)subParts.push(p.ptsPrevisao+' prev + '+p.ptsAoVivo+' vivo');
+    if(p.exatos)subParts.push('🎯 '+p.exatos);
+    var sub=subParts.length?'<div class="rank-pts-sub" style="font-size:10px;color:var(--muted);">'+subParts.join(' · ')+'</div>':'';
     return '<div class="rank-item '+(i<3?'gold':'')+'" role="button" tabindex="0" onclick="verExtrato(\''+p.nome.replace(/'/g,"\\'")+'\')"><div class="rank-pos '+(i==0?'p1':'')+'">'+(i==0?'🥇':(i+1)+'º')+'</div><div><div class="rank-name">'+p.nome+'</div>'+th+'</div><div><div class="rank-pts">'+p.pts+'</div>'+sub+'</div></div>';
   }).join('');
   parseEmojis(cont);
